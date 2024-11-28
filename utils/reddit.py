@@ -6,10 +6,12 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from itertools import chain
-
+from openai import OpenAI
 
 # Load environment variables
 load_dotenv()
+
+# client = OpenAI()
 
 # Initialize Reddit API
 reddit = praw.Reddit(
@@ -19,6 +21,28 @@ reddit = praw.Reddit(
 )
 
 # Helper functions
+
+# def generate_keywords(content) :
+#     completion = client.chat.completions.create(
+#         model="gpt-3.5-turbo-0125",
+#         messages=[
+#             {"role": "system", "content": "You are a helpful assistant."},
+#             {
+#                 "role": "user",
+#                 "content": (
+#                     "Extract a list of keywords from the following content. "
+#                     "Return the keywords as a Python list of strings. "
+#                     "Ensure the output is valid Python syntax.\n\n"
+#                     f"Content: {content}"
+#                 )
+#             }
+#         ]
+#     )
+#     print(completion.choices[0].message['content'])
+#     return completion.choices[0].message['content']
+
+
+
 def calculate_relevancy(subreddit, keywords):
     keyword_pattern = r'\b(?:' + '|'.join(re.escape(keyword.lower()) for keyword in keywords) + r')\b'
     title = subreddit.title.lower()
