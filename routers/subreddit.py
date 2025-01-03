@@ -18,3 +18,4 @@ async def get_ranked_subreddits(data: KeywordRequest):
         return {"subreddits": ranked_subreddits}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+

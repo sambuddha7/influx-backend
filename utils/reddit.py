@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from itertools import chain
-from openai import OpenAI
+# from openai import OpenAI
 
 # Load environment variables
 load_dotenv()
