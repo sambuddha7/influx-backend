@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import subreddit, reply
+from routers import subreddit, reply,post
 import uvicorn
 
 app = FastAPI()
@@ -17,6 +17,7 @@ app.add_middleware(
 # Include routers
 app.include_router(subreddit.router)
 app.include_router(reply.router)
+app.include_router(post.router)
 
 
 # Run the app
