@@ -7,6 +7,7 @@ import praw
 import os
 
 
+
 load_dotenv()
 
 router = APIRouter()
@@ -53,7 +54,7 @@ def reply_to_reddit_post(request: ReplyRequest):
 
 
 @router.get("/posts")
-def get_posts():
+async def get_posts():
     subreddit = "CRM"
     hot_posts = get_hot_posts(subreddit)
     reply_list = []
@@ -61,7 +62,9 @@ def get_posts():
         # 0 -> id
         # 1 -> title
         # 2 -> content
-        llm_reply = get_reply(f"title:{i[1]} content: {i[2]}")
+        # llm_reply = get_reply(f"title:{i[1]} content: {i[2]}") # llm call 
+        llm_reply = "This is a placeholder reply"
         reddit_object = [i[0], subreddit, i[1], i[2], llm_reply]
         reply_list.append(reddit_object)
+    
     return reply_list

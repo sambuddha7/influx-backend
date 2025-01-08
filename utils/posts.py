@@ -23,7 +23,18 @@ vectorizer = TfidfVectorizer(
     analyzer='word',
     token_pattern=r'(?u)\b\w+\b'
 )
-
+def split_csv_string(csv_string: str) -> list:
+    # Split the CSV string into a list of words based on commas
+    words = csv_string.split(",")
+    
+    # Get the first two words
+    first_two_words = words[:2]
+    
+    # Get the rest of the words
+    rest_of_words = words[2:]
+    
+    # Return the result as a 2D list
+    return [first_two_words, rest_of_words]
 def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
     """
     Fetch posts from all of Reddit based on search query
