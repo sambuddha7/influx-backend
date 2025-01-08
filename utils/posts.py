@@ -122,7 +122,9 @@ def is_promotional(submission) -> bool:
                                
         if not body_lower and submission.num_comments < 3 :
             return True  
-
+        
+        if len(body_lower) > 1000 : 
+            return True
         return False
 
 def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
@@ -137,6 +139,7 @@ def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
         List[Dict]: List of posts with their details
     """
     posts = []
+    seen_titles = set()
     
     for submission in reddit.subreddit("all").search(
         search_query, 
@@ -146,6 +149,12 @@ def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
     ):
         if is_promotional(submission) :
             continue
+        
+        normalized_title = "".join(submission.title.lower().split())
+        
+        if normalized_title in seen_titles:
+            continue
+        
         posts.append({
             'id': submission.id,
             'title': submission.title,
@@ -156,7 +165,7 @@ def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
             'num_comments': submission.num_comments,
             'subreddit': submission.subreddit.display_name
         })
-    
+        seen_titles.add(normalized_title)
     return posts
 
 def calculate_keyword_scores(text: str, 
