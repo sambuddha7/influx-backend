@@ -94,6 +94,9 @@ def is_promotional(submission) -> bool:
             for term in ['ad', 'sponsored', 'advertisement', 'promotion']):
             return True
         
+        if "coupon code" in title_lower or "promo code" in title_lower:
+            return True
+        
         
         headers = [line for line in body_lower.split('\n') 
               if line.strip().startswith('#')]
@@ -107,7 +110,7 @@ def is_promotional(submission) -> bool:
         promotional_keywords = [
             "pricing", "plans", "save", "free trial", 
             "special offer", "key features", "pros and cons", "try for free",
-            "buy now"
+            "buy now", "coupon code"
         ]
         
         # Count occurrences of keywords in title and body
@@ -127,7 +130,7 @@ def is_promotional(submission) -> bool:
             return True
         return False
 
-def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
+def fetch_reddit_posts(search_query: str, limit: int, duration) -> List[Dict]:
     """
     Fetch posts from all of Reddit based on search query
     
@@ -144,7 +147,7 @@ def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
     for submission in reddit.subreddit("all").search(
         search_query, 
         sort='relevance', 
-        time_filter='month',
+        time_filter=duration,
         limit=limit
     ):
         if is_promotional(submission) :
@@ -157,8 +160,6 @@ def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
         post_identifier = (author, normalized_title)
         
         if post_identifier in seen_posts:
-            print("Duplicate post found")
-            print(post_identifier)
             continue  
         
         posts.append({
@@ -207,7 +208,8 @@ def find_relevant_posts(primary_keywords: List[str],
                        limit: int,
                        min_similarity: float = 0.1,
                        primary_weight: float = 0.7,
-                       secondary_weight: float = 0.3) -> pd.DataFrame:
+                       secondary_weight: float = 0.3,
+                       duration: str="month") -> pd.DataFrame:
     """
     Find posts relevant to given primary and secondary keywords
     
@@ -226,7 +228,7 @@ def find_relevant_posts(primary_keywords: List[str],
     search_query = ' OR '.join(f'"{kw}"' for kw in primary_keywords)
     
     # Fetch posts using Reddit's search
-    all_posts = fetch_reddit_posts(search_query, limit=limit)
+    all_posts = fetch_reddit_posts(search_query, limit, duration)
     
     if not all_posts:
         return pd.DataFrame()
