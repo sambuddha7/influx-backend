@@ -6,6 +6,7 @@ import numpy as np
 from typing import List, Dict, Tuple
 from datetime import datetime
 import os 
+import re 
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -35,6 +36,95 @@ def split_csv_string(csv_string: str) -> list:
     
     # Return the result as a 2D list
     return [first_two_words, rest_of_words]
+
+
+def contains_url(post_body):
+    """
+    Check if a Reddit post body contains a URL.
+    Returns True if URL is found, False otherwise.
+    """
+    # Common URL patterns
+    url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    
+    # Reddit markdown URL pattern [text](url)
+    markdown_pattern = r'\[([^\]]+)\]\(([^)]+)\)'
+    
+    # Check for both raw URLs and markdown URLs
+    has_raw_url = bool(re.search(url_pattern, post_body))
+    has_markdown_url = bool(re.search(markdown_pattern, post_body))
+    
+    return has_raw_url or has_markdown_url
+
+def is_promotional(submission) -> bool:
+        title_lower = submission.title.lower()
+        
+        # Title prefix patterns
+        prefix_patterns = [
+            r'^\[(hiring|ad|advertisement|sponsored|promo|promotion|deal|sale|' \
+            r'discount|giveaway|contest|affiliate|referral)\]',
+            r'^\((hiring|ad|advertisement|sponsored|promo|promotion|deal|sale|' \
+            r'discount|giveaway|contest|affiliate|referral)\)',
+        ]
+        body_lower = submission.selftext.lower()
+        if title_lower.startswith('[hiring]') or body_lower.startswith('[hiring]') or title_lower.startswith('hiring:') :
+            return True
+        
+        # General promotional patterns
+        promo_patterns = [
+            r'\d+%\s*off',
+            r'save\s*\$?\d+',
+            r'limited\s*time\s*offer',
+            r'click\s*here\s*to',
+            r'dm\s*for\s*promo',
+            r'discount\s*code',
+            r'exclusive\s*offer',
+            r'special\s*price',
+            r'^now\s*available',
+            r'buy\s*now',
+            r'order\s*now',
+            r'sale\s*ends',
+        ]
+        
+        # Check title patterns
+        if any(re.search(pattern, title_lower) for pattern in prefix_patterns + promo_patterns):
+            return True
+               
+        # Check flair
+        if submission.link_flair_text and any(term in str(submission.link_flair_text).lower() 
+            for term in ['ad', 'sponsored', 'advertisement', 'promotion']):
+            return True
+        
+        
+        headers = [line for line in body_lower.split('\n') 
+              if line.strip().startswith('#')]
+        has_multiple_headers = len(headers) > 3
+        
+
+        bullets = [line for line in body_lower.split('\n') 
+                if line.strip().startswith(('*', '-', '+'))]
+        has_bullets = len(bullets) > 3
+        
+        promotional_keywords = [
+            "pricing", "plans", "save", "free trial", 
+            "special offer", "key features", "pros and cons", "try for free",
+            "buy now"
+        ]
+        
+        # Count occurrences of keywords in title and body
+        keyword_count = sum(
+            1 for keyword in promotional_keywords 
+            if keyword in title_lower or keyword in body_lower
+        )
+    
+            
+        if contains_url(body_lower) and (len(body_lower.split()) > 300) and has_bullets and has_multiple_headers and submission.num_comments < 3 :
+            return True
+                               
+        if not body_lower and submission.num_comments < 3 :
+            return True  
+
+        return False
+
 def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
     """
     Fetch posts from all of Reddit based on search query
@@ -54,6 +144,8 @@ def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
         time_filter='month',
         limit=limit
     ):
+        if is_promotional(submission) :
+            continue
         posts.append({
             'id': submission.id,
             'title': submission.title,
