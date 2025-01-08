@@ -153,12 +153,12 @@ def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
         normalized_title = "".join(submission.title.lower().split())
             
         author = submission.author.name if submission.author else None
-        if not author:
-            continue  
         
         post_identifier = (author, normalized_title)
         
         if post_identifier in seen_posts:
+            print("Duplicate post found")
+            print(post_identifier)
             continue  
         
         posts.append({

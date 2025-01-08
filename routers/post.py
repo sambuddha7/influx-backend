@@ -12,15 +12,14 @@ class KeywordsInput(BaseModel):
     primary_keywords: List[str]
     secondary_keywords: List[str]
     limit: Optional[int] = 10000
-    min_similarity: Optional[float] = 0.2
+    min_similarity: Optional[float] = 0.1
 
 @router.get("/relevant_posts")
 async def get_relevant_posts(userid):
     # Get keywords from Firestore
-    # print(userid)
     keywords = await firestore_service.get_keywords(user_id=userid)
     keywords = split_csv_string(keywords)
-    print(keywords)
+
     keywords = KeywordsInput(
         primary_keywords=keywords[0],
         secondary_keywords=keywords[1],
@@ -40,9 +39,6 @@ async def get_relevant_posts(userid):
 
         # Convert DataFrame to list of dictionaries for response
         results = results_df.astype(object).to_dict(orient="records")
-        for i in range(1, 4):
-            print(results[i])
-            print("\n#########")
 
         # id
         # subreddit
@@ -51,10 +47,10 @@ async def get_relevant_posts(userid):
     #     reply_list = []
         iter = 0
         reply_list = []
-        if len(results) < 10:
+        if len(results) < 20:
             iter = len(results)
         else:
-            iter = 10
+            iter = 20
         for i in range(iter):
             obj = results[i] #victim of the crime
             llm_reply = "This is a placeholder reply"
