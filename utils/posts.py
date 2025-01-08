@@ -139,7 +139,7 @@ def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
         List[Dict]: List of posts with their details
     """
     posts = []
-    seen_titles = set()
+    seen_posts = set()
     
     for submission in reddit.subreddit("all").search(
         search_query, 
@@ -151,9 +151,15 @@ def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
             continue
         
         normalized_title = "".join(submission.title.lower().split())
+            
+        author = submission.author.name if submission.author else None
+        if not author:
+            continue  
         
-        if normalized_title in seen_titles:
-            continue
+        post_identifier = (author, normalized_title)
+        
+        if post_identifier in seen_posts:
+            continue  
         
         posts.append({
             'id': submission.id,
@@ -165,7 +171,7 @@ def fetch_reddit_posts(search_query: str, limit: int) -> List[Dict]:
             'num_comments': submission.num_comments,
             'subreddit': submission.subreddit.display_name
         })
-        seen_titles.add(normalized_title)
+        seen_posts.add(post_identifier)
     return posts
 
 def calculate_keyword_scores(text: str, 
