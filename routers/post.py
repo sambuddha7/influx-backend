@@ -105,8 +105,11 @@ async def get_relevant_posts(userid):
         for i in range(iter):
             obj = results[i] #victim of the crime
             llm_reply = "This is a placeholder reply"
-            reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], llm_reply]
+            # reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], llm_reply]
+            reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], "this is a test reply"]
+
             reply_list.append(reddit_object)
+            await firestore_service.add_post(userid, reddit_object)
 
         return reply_list
         #return results
