@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from utils.finder import get_rising_posts, get_hot_posts, get_reply
+from utils.tracker import MetricsTracker
 from typing import List
 from dotenv import load_dotenv
 import praw
@@ -21,6 +22,7 @@ reddit = praw.Reddit(
     password=os.getenv("PASSWORD"),
 )
 
+tracker = MetricsTracker(reddit)
 class ReplyRequest(BaseModel):
     post_id: str = Field(..., min_length=1)
     reply_text: str = Field(..., min_length=1)
@@ -39,7 +41,7 @@ def reply_to_reddit_post(request: ReplyRequest):
         submission = reddit.submission(id=request.post_id)
         # Add a reply to the post
         reply = submission.reply(request.reply_text)
-        
+        tracker.add_reply(reply.id)
         return {
             "status": "success", 
             "message": "Reply submitted successfully",
@@ -68,3 +70,10 @@ async def get_posts():
         reply_list.append(reddit_object)
     
     return reply_list
+
+
+
+@router.get("/metrics")
+def get_metrics():
+    """Get current metrics for all tracked replies"""
+    return tracker.get_metrics()
