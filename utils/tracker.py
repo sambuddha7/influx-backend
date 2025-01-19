@@ -44,7 +44,18 @@ class MetricsTracker:
             
             total_comments = len(self.tracked_replies)
             if total_comments == 0:
-                return {"status": "no_data", "message": "No comments being tracked"}
+                return {
+                "total_comments": 0,
+                "total_score": 0,
+                "total_replies": 0,
+                "average_score": 0,
+                "average_replies": 0,
+                "positive_ratio": 0,
+                "negative_ratio": 0,
+                "highest_score": 0,
+                "lowest_score": 0,
+                "fetched_at": datetime.now().isoformat()
+            }
 
             return {
                 "total_comments": total_comments,

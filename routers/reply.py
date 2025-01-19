@@ -53,23 +53,12 @@ def reply_to_reddit_post(request: ReplyRequest):
     except Exception as e:
         # Handle any other unexpected errors
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-
-
-@router.get("/posts")
-async def get_posts():
-    subreddit = "CRM"
-    hot_posts = get_hot_posts(subreddit)
-    reply_list = []
-    for i in hot_posts:
-        # 0 -> id
-        # 1 -> title
-        # 2 -> content
-        # llm_reply = get_reply(f"title:{i[1]} content: {i[2]}") # llm call 
-        llm_reply = "This is a placeholder reply"
-        reddit_object = [i[0], subreddit, i[1], i[2], llm_reply]
-        reply_list.append(reddit_object)
     
-    return reply_list
+@router.post("/reply")
+async def get_reps(post: RedditPost):
+
+    llm_reply = get_reply(f"title:{post.title} content: {post.content}") # llm call 
+    return llm_reply
 
 
 
