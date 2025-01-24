@@ -60,8 +60,11 @@ def reply_to_reddit_post(request: ReplyRequest):
 @router.post("/reply")
 async def get_reps(post: RedditPost, userid):
     company_description = await firestore_service.get_company_description(user_id=userid) #1
-    company_name = await firestore_service.get_company_description(user_id=userid) #1
-    llm_reply = get_reply(f"title:{post.title} content: {post.content}", userid) # llm call 
+    company_name = await firestore_service.get_company_name(user_id=userid) #2
+    user_role = await firestore_service.get_user_role(user_id=userid) #3
+    sample_reply =  await firestore_service.get_sample_reply(user_id=userid)#4 
+    marketing_goals = await firestore_service.get_marketing_objectives(user_id=userid) #5
+    llm_reply = get_reply(f"title:{post.title} content: {post.content}", company_name, company_description, user_role, sample_reply, marketing_goals) # llm call 
     return llm_reply
 
 

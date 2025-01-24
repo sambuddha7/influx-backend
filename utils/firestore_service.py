@@ -44,6 +44,58 @@ class FirestoreService:
             return data.get('companyName', None)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error fetching company name: {str(e)}")
+    async def get_user_role(self, user_id: str) -> Optional[str]:
+        """Get company description for a specific user"""
+        try:
+            doc_ref = self.db.collection('ai-training').document(user_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
+                return None
+                
+            data = doc.to_dict()
+            return data.get('postAs', None)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error fetching user roles: {str(e)}")
+    async def get_sample_reply(self, user_id: str) -> Optional[str]:
+        """Get company description for a specific user"""
+        try:
+            doc_ref = self.db.collection('ai-training').document(user_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
+                return None
+                
+            data = doc.to_dict()
+            return data.get('sampleReply', None)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error fetching sample replies: {str(e)}")
+    async def get_marketing_objectives(self, user_id: str) -> Optional[str]:
+        """Get company description for a specific user"""
+        try:
+            doc_ref = self.db.collection('ai-training').document(user_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
+                return None
+                
+            data = doc.to_dict()
+            return data.get('marketingGoals', None)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error fetching marketing goals: {str(e)}")
+    async def get_pain_points(self, user_id: str) -> Optional[str]:
+        """Get pain points for a specific user"""
+        try:
+            doc_ref = self.db.collection('ai-training').document(user_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
+                return None
+                
+            data = doc.to_dict()
+            return data.get('marketingGoals', None)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error fetching pain points: {str(e)}")
     async def get_company_description(self, user_id: str) -> Optional[str]:
         """Get company description for a specific user"""
         try:
