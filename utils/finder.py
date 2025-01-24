@@ -36,8 +36,8 @@ def get_reply(text_to_reply, company_name, company_description, user_role, sampl
     marketing_objectives = ""
     system_prompt = f"You are an AI assistant trained to craft personalized Reddit comment replies for {company_name}."
 
-    if user_role:
-        system_prompt = f"You are an AI assistant trained to craft personalized Reddit comment replies for {company_name}. You can mention that you are a {user_role} at {company_name} but only when relevant."
+    # if user_role:
+        # system_prompt = f"You are an AI assistant trained to craft personalized Reddit comment replies for {company_name}. You can mention that you are a {user_role} at {company_name} but say it as a disclaimer in the end."
     user_prompt = f"""Please generate a Reddit comment reply based on the following inputs:
 
 Text to reply to:
