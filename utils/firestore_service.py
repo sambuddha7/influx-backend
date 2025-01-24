@@ -31,6 +31,19 @@ class FirestoreService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error fetching keywords: {str(e)}")
     
+    async def get_company_name(self, user_id: str) -> Optional[str]:
+        """Get company description for a specific user"""
+        try:
+            doc_ref = self.db.collection('onboarding').document(user_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
+                return None
+                
+            data = doc.to_dict()
+            return data.get('companyName', None)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error fetching company name: {str(e)}")
     async def get_company_description(self, user_id: str) -> Optional[str]:
         """Get company description for a specific user"""
         try:
@@ -41,7 +54,7 @@ class FirestoreService:
                 return None
                 
             data = doc.to_dict()
-            return data.get('company_desc')
+            return data.get('companyDescription', None)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error fetching company description: {str(e)}")
     async def add_post(self, user_id: str, reddit_object: List[str]) -> str:

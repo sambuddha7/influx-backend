@@ -53,7 +53,7 @@ async def get_relevant_posts(userid):
             iter = 20
         for i in range(iter):
             obj = results[i] #victim of the crime
-            llm_reply = "This is a placeholder reply"
+            llm_reply = "Add your reply here"
             reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], llm_reply, obj["url"], obj["created_utc"]]
             reply_list.append(reddit_object)
 
@@ -104,7 +104,7 @@ async def get_relevant_posts(userid):
             iter = 20
         for i in range(iter):
             obj = results[i] #victim of the crime
-            llm_reply = "This is a placeholder reply"
+            llm_reply = "Add your reply here"
             # reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], llm_reply]
             reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], "this is a test reply", obj["url"], obj["created_utc"]]
 

@@ -6,7 +6,10 @@ from typing import List
 from dotenv import load_dotenv
 import praw
 import os
+from utils.firestore_service import FirestoreService
 
+firestore_service = FirestoreService()
+router = APIRouter()
 
 
 load_dotenv()
@@ -55,9 +58,10 @@ def reply_to_reddit_post(request: ReplyRequest):
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
     
 @router.post("/reply")
-async def get_reps(post: RedditPost):
-
-    llm_reply = get_reply(f"title:{post.title} content: {post.content}") # llm call 
+async def get_reps(post: RedditPost, userid):
+    company_description = await firestore_service.get_company_description(user_id=userid) #1
+    company_name = await firestore_service.get_company_description(user_id=userid) #1
+    llm_reply = get_reply(f"title:{post.title} content: {post.content}", userid) # llm call 
     return llm_reply
 
 
