@@ -2,13 +2,33 @@ from fastapi import FastAPI, HTTPException
 from firebase_admin import credentials, firestore, initialize_app
 from typing import List, Optional
 from datetime import datetime
+import firebase_admin
+import os 
+from dotenv import load_dotenv
+from google.oauth2 import service_account
+
+load_dotenv()
 
 
 # Initialize Firebase Admin SDK
-# cred = credentials.Certificate("../serviceAccountKey.json")
-cred = credentials.Certificate("./serviceAccountKey.json")
+service_account_key_json = {
+    "type": os.getenv("type"),
+    "project_id": os.getenv("project_id"),
+    "private_key_id": os.getenv("private_key_id"),
+    "private_key": os.getenv("private_key").replace('\\n', '\n'),
+    "client_email": os.getenv("client_email"),
+    "client_id": os.getenv("client_id"),
+    "auth_uri": os.getenv("auth_uri"),
+    "token_uri": os.getenv("token_uri"),
+    "auth_provider_x509_cert_url": os.getenv("auth_provider_x509_cert_url"),
+    "client_x509_cert_url": os.getenv("client_x509_cert_url"),
+    "universe_domain": os.getenv("universe_domain")
+}
 
-initialize_app(cred)
+
+
+cred = service_account.Credentials.from_service_account_info(service_account_key_json)
+firebase_admin.initialize_app(cred, {'projectId': 'influx-18581'})
 
 # Initialize Firestore client
 db = firestore.client()
