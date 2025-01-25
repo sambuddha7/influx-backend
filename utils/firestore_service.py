@@ -50,7 +50,32 @@ class FirestoreService:
             return data.get('keywords', [])
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error fetching keywords: {str(e)}")
-    
+    async def get_primary_keywords(self, user_id: str) -> List[str]:
+        """Get keywords for a specific user"""
+        try:
+            doc_ref = self.db.collection('onboarding').document(user_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
+                return []
+                
+            data = doc.to_dict()
+            return data.get('primaryKeywords', [])
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error fetching keywords: {str(e)}")
+    async def get_secondary_keywords(self, user_id: str) -> List[str]:
+        """Get keywords for a specific user"""
+        try:
+            doc_ref = self.db.collection('onboarding').document(user_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
+                return []
+                
+            data = doc.to_dict()
+            return data.get('secondaryKeywords', [])
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error fetching keywords: {str(e)}")
     async def get_company_name(self, user_id: str) -> Optional[str]:
         """Get company description for a specific user"""
         try:
