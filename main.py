@@ -19,6 +19,9 @@ app.include_router(subreddit.router)
 app.include_router(reply.router)
 app.include_router(post.router)
 
+@app.get("/")
+async def root():
+    return {"message": "Hello from FastAPI!"}
 
 # Run the app
 if __name__ == "__main__":

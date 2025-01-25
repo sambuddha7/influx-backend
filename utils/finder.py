@@ -35,7 +35,9 @@ def get_reply(text_to_reply, company_name, company_description, user_role, sampl
     
     marketing_objectives = ""
     system_prompt = f"You are an AI assistant trained to craft personalized Reddit comment replies for {company_name}."
-
+    if user_role:
+        system_prompt = f" You are a {user_role} at {company_name} who is crafting personalized Reddit comment replies."
+    print(system_prompt)
     # if user_role:
         # system_prompt = f"You are an AI assistant trained to craft personalized Reddit comment replies for {company_name}. You can mention that you are a {user_role} at {company_name} but say it as a disclaimer in the end."
     user_prompt = f"""Please generate a Reddit comment reply based on the following inputs:
@@ -53,6 +55,8 @@ Text to reply to:
 5. Sound genuine and authentic.
 6. Use company description for reference if you're mentioning the company.
 7. Keep it brief and to the point.
+8. Before generating the reply, think step-by-step and then give your answer (whether to promote product or just give general advice).
+9. Don't include your thought process in the reply.
 </instructions>
 
 
@@ -62,14 +66,13 @@ Text to reply to:
 
     if marketing_objectives:
         user_prompt += f"\n<marketing_objectives>{marketing_objectives}</marketing_objectives>"
-        user_prompt += "\n6. Subtly align the response with the marketing objectives."
+        user_prompt += "\n9. Subtly align the response with the marketing objectives."
 
     if sample_replies:
         user_prompt += f"\n<sample_responses>\n{sample_replies}\n</sample_responses>"
-        user_prompt += "\n7. Use the sample responses as a guide for style and content, but don't copy them directly."
+        user_prompt += "\n10. Use the sample responses as a guide for style and content, but don't copy them directly."
 
     user_prompt += "\n\nPlease generate a Reddit comment reply based on these inputs."
-    print(user_prompt)
     try:
         message = client.messages.create(
             # model="claude-3-opus-20240229",
