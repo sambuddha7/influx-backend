@@ -31,6 +31,35 @@ def get_hot_posts(subreddit_name, limit=5):
     hot_posts = subreddit.hot(limit=limit)
     return [[post.id, post.title, post.selftext] for post in hot_posts]
 
+
+def get_keywords(description):
+    system_prompt = "Generate keywords from the given text in a csv format. "
+    user_prompt = f"""
+    
+    <instructions>
+1. Please generate 10 keywords from the following company description:\n\n{description}
+2. Provide just the csv, without any additional text or explanations.
+3. Here's a sample of a reply : "keyword1, keyword2, keyword3, keyword4, keyword5, keyword6, keyword7, keyword8, keyword9, keyword10"
+</instructions>
+    
+    """
+    try:
+        message = client.messages.create(
+            # model="claude-3-opus-20240229",
+            model="claude-3-haiku-20240307",
+            system=system_prompt,
+            max_tokens=1000,
+            messages=[
+                {"role": "user", "content": user_prompt}
+            ]
+        )
+
+        string = message.content[0].text
+        cleaned_string = string.strip('"')
+
+        return cleaned_string
+    except Exception as e:
+        return f"Error getting summary: {str(e)}"
 def get_reply(text_to_reply, company_name, company_description, user_role, sample_replies, marketing_objectives):
     
     marketing_objectives = ""

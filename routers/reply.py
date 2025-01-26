@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from utils.finder import get_rising_posts, get_hot_posts, get_reply
+from utils.finder import get_rising_posts, get_hot_posts, get_reply, get_keywords
 from utils.tracker import MetricsTracker
 from typing import List
 from dotenv import load_dotenv
@@ -68,7 +68,13 @@ async def get_reps(post: RedditPost, userid):
     llm_reply = get_reply(f"title:{post.title} content: {post.content}", company_name, company_description, user_role, sample_reply, marketing_goals) # llm call 
     return llm_reply
 
-
+@router.post("/keywords")
+async def get_keywords_from_description(description: str):
+    try:
+        keywords = get_keywords(description)
+        return keywords
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/metrics")
 def get_metrics():
