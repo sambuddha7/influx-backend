@@ -17,12 +17,15 @@ class KeywordsInput(BaseModel):
 @router.get("/relevant_posts")
 async def get_relevant_posts(userid):
     # Get keywords from Firestore
-    keywords = await firestore_service.get_keywords(user_id=userid)
-    keywords = split_csv_string(keywords)
-
+    # keywords = await firestore_service.get_keywords(user_id=userid)
+    # keywords = split_csv_string(keywords)
+    primary = await firestore_service.get_primary_keywords(user_id=userid)
+    secondary = await firestore_service.get_secondary_keywords(user_id=userid)
+    primary = primary.split(',')
+    secondary = secondary.split(',')
     keywords = KeywordsInput(
-        primary_keywords=keywords[0],
-        secondary_keywords=keywords[1],
+        primary_keywords=primary,
+        secondary_keywords=secondary,
     )
     #reply_list = []
     try:
