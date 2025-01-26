@@ -22,11 +22,15 @@ class MetricsTracker:
             positive_comments = 0
             negative_comments = 0
             scores = []
+            valid_replies = set()
 
             for reply_id in self.tracked_replies:
                 try:
                     comment = self.reddit.comment(id=reply_id)
                     comment.refresh()
+                    
+                    if comment.author is None:  # Deleted comments have `author` as None
+                        continue
                     
                     # Accumulate basic metrics
                     total_score += comment.score
@@ -38,10 +42,14 @@ class MetricsTracker:
                         positive_comments += 1
                     elif comment.score < 0:
                         negative_comments += 1
+                    
+                    valid_replies.add(reply_id)
 
                 except Exception as e:
                     continue  
             
+            self.tracked_replies = valid_replies
+
             total_comments = len(self.tracked_replies)
             if total_comments == 0:
                 return {
