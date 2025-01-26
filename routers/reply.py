@@ -15,12 +15,13 @@ router = APIRouter()
 load_dotenv()
 
 router = APIRouter()
+api_url = os.getenv("api_url")
 
 reddit = praw.Reddit(
     client_id=os.getenv("CLIENT_ID1"),
     client_secret=os.getenv("CLIENT_SECRET1"),
     user_agent=os.getenv("USER_AGENT"),
-    redirect_uri='http://localhost:8000/reddit_callback',
+    redirect_uri=f"{api_url}/reddit_callback",
     username=os.getenv("USER_NAME"),
     password=os.getenv("PASSWORD"),
 )
