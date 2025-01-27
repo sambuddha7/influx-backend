@@ -177,6 +177,17 @@ class FirestoreService:
             return f"Post {post_data['id']} added successfully!"
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error adding post: {str(e)}")
+        
+    async def add_reply_to_user(self, user_id: str, reply_id: str):
+        user_doc = self.db.collection('track-replies').document(user_id)
+        user_doc.set({'replies': firestore.ArrayUnion([reply_id])}, merge=True)
+
+    async def get_replies_for_user(self, user_id: str) -> List[str]:
+        user_doc = self.db.collection('track-replies').document(user_id)
+        doc = user_doc.get()
+        if doc.exists:
+            return doc.to_dict().get('replies', [])
+        return []
 
 # Example usage in FastAPI routes
 app = FastAPI()

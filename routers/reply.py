@@ -26,7 +26,7 @@ reddit = praw.Reddit(
     password=os.getenv("PASSWORD"),
 )
 
-tracker = MetricsTracker(reddit)
+tracker = MetricsTracker(reddit, firestore_service)
 class ReplyRequest(BaseModel):
     post_id: str = Field(..., min_length=1)
     reply_text: str = Field(..., min_length=1)
@@ -39,13 +39,13 @@ class RedditPost(BaseModel):
 
 
 @router.post("/reply_to_post")
-def reply_to_reddit_post(request: ReplyRequest):
+async def reply_to_reddit_post(request: ReplyRequest, userid: str):
     try:
         # Fetch the submission using the post ID
         submission = reddit.submission(id=request.post_id)
         # Add a reply to the post
         reply = submission.reply(request.reply_text)
-        tracker.add_reply(reply.id)
+        await tracker.add_reply(userid, reply.id)
         return {
             "status": "success", 
             "message": "Reply submitted successfully",
@@ -77,6 +77,7 @@ async def get_keywords_from_description(description: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/metrics")
-def get_metrics():
+async def get_metrics(userid: str):
     """Get current metrics for all tracked replies"""
-    return tracker.get_metrics()
+    metrics = await tracker.get_metrics(userid)
+    return metrics
