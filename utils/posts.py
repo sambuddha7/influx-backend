@@ -100,7 +100,7 @@ def is_promotional(submission) -> bool:
             for term in ['ad', 'sponsored', 'advertisement', 'promotion']):
             return True
         
-        if "coupon code" in title_lower or "promo code" in title_lower:
+        if "coupon code" in title_lower or "promo code" in title_lower or "hiring" in title_lower:
             return True
         
         
