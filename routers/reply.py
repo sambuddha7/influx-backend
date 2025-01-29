@@ -18,12 +18,12 @@ router = APIRouter()
 api_url = os.getenv("api_url")
 
 reddit = praw.Reddit(
-    client_id=os.getenv("CLIENT_ID1"),
-    client_secret=os.getenv("CLIENT_SECRET1"),
-    user_agent=os.getenv("USER_AGENT"),
+    client_id=os.getenv("CLIENT_ID2"),
+    client_secret=os.getenv("CLIENT_SECRET2"),
+    user_agent=os.getenv("USER_AGENT2"),
     redirect_uri=f"{api_url}/reddit_callback",
-    username=os.getenv("USER_NAME"),
-    password=os.getenv("PASSWORD"),
+    username=os.getenv("USER_NAME2"),
+    password=os.getenv("PASSWORD2"),
 )
 
 tracker = MetricsTracker(reddit, firestore_service)
