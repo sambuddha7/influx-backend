@@ -55,7 +55,9 @@ def contains_url(post_body):
     
     return has_raw_url or has_markdown_url
 
+
 def is_promotional(submission) -> bool:
+
         title_lower = submission.title.lower()
         
         # Title prefix patterns
@@ -66,6 +68,10 @@ def is_promotional(submission) -> bool:
             r'discount|giveaway|contest|affiliate|referral)\)',
         ]
         body_lower = submission.selftext.lower()
+        
+        if(not body_lower) :
+            return True
+        
         if title_lower.startswith('[hiring]') or body_lower.startswith('[hiring]') or title_lower.startswith('hiring:') :
             return True
         
@@ -128,6 +134,7 @@ def is_promotional(submission) -> bool:
         
         if len(body_lower) > 1000 : 
             return True
+               
         return False
 
 def fetch_reddit_posts(search_query: str, limit: int, duration) -> List[Dict]:
@@ -224,8 +231,15 @@ def find_relevant_posts(primary_keywords: List[str],
     Returns:
         pd.DataFrame: Sorted dataframe of relevant posts
     """
+    if primary_keywords == [""]:
+        primary_keywords = secondary_keywords.copy()
+        secondary_keywords = []
+        
     # Create search query from primary keywords
-    search_query = ' OR '.join(f'"{kw}"' for kw in primary_keywords)
+    if len(primary_keywords) == 1:
+        search_query = ' OR '.join(f'"{kw}"' for kw in (primary_keywords + secondary_keywords))
+    else:
+        search_query = ' OR '.join(f'"{kw}"' for kw in primary_keywords)
     
     # Fetch posts using Reddit's search
     all_posts = fetch_reddit_posts(search_query, limit, duration)

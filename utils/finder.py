@@ -118,6 +118,7 @@ Text to reply to:
                 {"role": "user", "content": user_prompt}
             ]
         )
+        print(user_prompt)
 
         string = message.content[0].text
         cleaned_string = string.strip('"')
