@@ -81,12 +81,10 @@ Text to reply to:
 3. Use markdown formatting for better readability if appropriate.
 4. Provide just the reply, without any additional text or explanations.
 5. Sound genuine and authentic.
-6. Use company description for reference if you're mentioning the company.
+6. Use company description or any knowledge you have of the company for reference when mentioning the company.
 7. Keep it brief and to the point.
 8. Don't mention other companies outside of {company_name} if you're mentioning any company or software.
-8. Before generating the reply, think step-by-step and then give your answer (whether to promote product or just give general advice).
-9. Don't include your thought process in the reply.
-10. Keep the tone casual, how it is usually on reddit. Don't make it sound formal at all.
+9. Keep the tone casual, how it is usually on reddit. Don't make it sound formal at all.
 </instructions>
 
 
