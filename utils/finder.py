@@ -45,7 +45,7 @@ def get_keywords(description):
     """
     try:
         message = client.messages.create(
-            model="claude-3-haiku-latest",
+            model="claude-3-5-haiku-20241022",
             system=system_prompt,
             max_tokens=1000,
             messages=[
