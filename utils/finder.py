@@ -45,8 +45,8 @@ def get_keywords(description):
     """
     try:
         message = client.messages.create(
-            # model="claude-3-opus-20240229",
-            model="claude-3-haiku-20240307",
+            model="claude-3-opus-20240229",
+            # model="claude-3-haiku-20240307",
             system=system_prompt,
             max_tokens=1000,
             messages=[
@@ -78,7 +78,7 @@ Text to reply to:
 
 <instructions>
 1. Craft a response that is helpful and adds value to the conversation.
-2. Keep the response in one or two lines.
+2. Keep the response in one or two lines maximum.
 3. Use markdown formatting for better readability if appropriate.
 4. Provide just the reply, without any additional text or explanations.
 5. Sound genuine and authentic.
@@ -86,6 +86,7 @@ Text to reply to:
 7. Keep it brief and to the point.
 8. Before generating the reply, think step-by-step and then give your answer (whether to promote product or just give general advice).
 9. Don't include your thought process in the reply.
+10. Keep the tone casual, how it is usually on reddit. Don't make it sound formal at all.
 </instructions>
 
 
@@ -105,7 +106,8 @@ Text to reply to:
     try:
         message = client.messages.create(
             # model="claude-3-opus-20240229",
-            model="claude-3-haiku-20240307",
+            model="claude-3-5-sonnet-20241022",
+            # model="claude-3-haiku-20240307",
             system=system_prompt,
             max_tokens=1000,
             # messages=[
@@ -118,7 +120,6 @@ Text to reply to:
                 {"role": "user", "content": user_prompt}
             ]
         )
-        print(user_prompt)
 
         string = message.content[0].text
         cleaned_string = string.strip('"')
