@@ -62,9 +62,9 @@ def get_keywords(description):
 def get_reply(text_to_reply, company_name, company_description, user_role, sample_replies, marketing_objectives):
     
     marketing_objectives = ""
-    system_prompt = f"You are an AI assistant trained to craft personalized Reddit comment replies for {company_name}."
+    system_prompt = f"You are an AI assistant trained to craft personalized Reddit comment replies for {company_name} and finding potential customers."
     if user_role:
-        system_prompt = f" You are a {user_role} at {company_name} who is crafting personalized Reddit comment replies."
+        system_prompt = f" You are a {user_role} at {company_name} who is crafting personalized Reddit comment replies and finding potential customers."
     print(system_prompt)
     # if user_role:
         # system_prompt = f"You are an AI assistant trained to craft personalized Reddit comment replies for {company_name}. You can mention that you are a {user_role} at {company_name} but say it as a disclaimer in the end."
@@ -83,6 +83,7 @@ Text to reply to:
 5. Sound genuine and authentic.
 6. Use company description for reference if you're mentioning the company.
 7. Keep it brief and to the point.
+8. Don't mention other companies outside of {company_name} if you're mentioning any company or software.
 8. Before generating the reply, think step-by-step and then give your answer (whether to promote product or just give general advice).
 9. Don't include your thought process in the reply.
 10. Keep the tone casual, how it is usually on reddit. Don't make it sound formal at all.
