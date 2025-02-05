@@ -28,7 +28,9 @@ service_account_key_json = {
 
 
 cred = service_account.Credentials.from_service_account_info(service_account_key_json)
-firebase_admin.initialize_app(cred, {'projectId': 'influx-18581'})
+# firebase_admin.initialize_app(cred, {'projectId': 'influx-18581'})
+firebase_admin.initialize_app(cred, {'projectId': os.getenv("project_id")})
+
 
 # Initialize Firestore client
 db = firestore.client()
@@ -36,7 +38,16 @@ db = firestore.client()
 class FirestoreService:
     def __init__(self):
         self.db = firestore.client()
-    
+
+    async def get_active_user_ids(self) -> List[str]:
+        """Retrieve all user IDs where accountStatus is 'active' from the 'account-details' collection"""
+        try:
+            users_ref = self.db.collection("account-details").where("accountStatus", "==", "active")
+            docs = users_ref.stream()
+            user_ids = [doc.get("userId") for doc in docs if doc.get("userId")]
+            return user_ids
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error fetching active user IDs: {str(e)}")
     async def get_keywords(self, user_id: str) -> List[str]:
         """Get keywords for a specific user"""
         try:
@@ -164,8 +175,17 @@ class FirestoreService:
                 "title": reddit_object[2],
                 "content": reddit_object[3],
                 "suggestedReply": reddit_object[4],
-                "createdAt": datetime.now()
+                "url": reddit_object[5],
+                "date_created": reddit_object[6],
+                "createdAt": datetime.now(),
             }
+            if isinstance(reddit_object[6], datetime):
+                post_data["date_created"] = reddit_object[6].isoformat() + "Z"
+            elif isinstance(reddit_object[6], int) or isinstance(reddit_object[6], float):
+                post_data["date_created"] = datetime.utcfromtimestamp(reddit_object[6]).isoformat() + "Z"
+            else:
+                raise TypeError(f"Unexpected type for date_created: {type(reddit_object[6])}")
+
             
             # Reference to the "posts" subcollection for the user
             posts_collection_ref = self.db.collection("reddit-posts").document(user_id).collection("posts")

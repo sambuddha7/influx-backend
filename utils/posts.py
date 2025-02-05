@@ -8,6 +8,8 @@ from datetime import datetime
 import os 
 import re 
 from dotenv import load_dotenv
+from itertools import combinations
+
 
 load_dotenv()
 
@@ -72,7 +74,7 @@ def is_promotional(submission) -> bool:
         if(not body_lower) :
             return True
         
-        if title_lower.startswith('[hiring]') or body_lower.startswith('[hiring]') or title_lower.startswith('hiring:') :
+        if title_lower.startswith('[hiring]') or body_lower.startswith('[hiring]') or title_lower.startswith('hiring:'):
             return True
         
         # General promotional patterns
@@ -100,7 +102,7 @@ def is_promotional(submission) -> bool:
             for term in ['ad', 'sponsored', 'advertisement', 'promotion']):
             return True
         
-        if "coupon code" in title_lower or "promo code" in title_lower or "hiring" in title_lower:
+        if "coupon code" in title_lower or "promo code" in title_lower or "hiring" in title_lower or "hiring" in body_lower or "hire" in title_lower:
             return True
         
         
@@ -137,7 +139,7 @@ def is_promotional(submission) -> bool:
                
         return False
 
-def fetch_reddit_posts(search_query: str, limit: int, duration) -> List[Dict]:
+def fetch_reddit_posts(search_query: str, limit: int, duration, seen_posts) -> List[Dict]:
     """
     Fetch posts from all of Reddit based on search query
     
@@ -149,7 +151,7 @@ def fetch_reddit_posts(search_query: str, limit: int, duration) -> List[Dict]:
         List[Dict]: List of posts with their details
     """
     posts = []
-    seen_posts = set()
+    # seen_posts = set()
     
     for submission in reddit.subreddit("all").search(
         search_query, 
@@ -158,6 +160,12 @@ def fetch_reddit_posts(search_query: str, limit: int, duration) -> List[Dict]:
         limit=limit
     ):
         if is_promotional(submission) :
+            continue
+        
+        #subreddit size check
+        subreddit = submission.subreddit
+        
+        if subreddit.subscribers < 100:
             continue
         
         normalized_title = "".join(submission.title.lower().split())
@@ -231,9 +239,18 @@ def find_relevant_posts(primary_keywords: List[str],
     Returns:
         pd.DataFrame: Sorted dataframe of relevant posts
     """
+    if True : 
+        return find_relevant_posts_extra(primary_keywords,
+                       secondary_keywords,
+                       limit, min_similarity)
+    
+    
     if primary_keywords == [""]:
         primary_keywords = secondary_keywords.copy()
         secondary_keywords = []
+        
+    print(primary_keywords)
+    print(secondary_keywords)
         
     # Create search query from primary keywords
     if len(primary_keywords) == 1:
@@ -303,3 +320,160 @@ def find_relevant_posts(primary_keywords: List[str],
     )
     
     return relevant_posts
+
+
+
+def find_relevant_posts_extra(primary_keywords: List[str],
+                       secondary_keywords: List[str],
+                       limit: int,
+                       min_similarity: float = 0.1,
+                       primary_weight: float = 0.7,
+                       secondary_weight: float = 0.3,
+                       duration: str="month") -> pd.DataFrame:
+    """
+    Find posts relevant to given primary and secondary keywords
+    
+    Args:
+        primary_keywords (List[str]): List of primary keywords (must match)
+        secondary_keywords (List[str]): List of secondary/context keywords
+        limit (int): Maximum posts to fetch
+        min_similarity (float): Minimum combined similarity score
+        primary_weight (float): Weight for primary keyword similarity (0-1)
+        secondary_weight (float): Weight for secondary keyword similarity (0-1)
+        
+    Returns:
+        pd.DataFrame: Sorted dataframe of relevant posts
+    """
+    if primary_keywords == [""]:
+        primary_keywords = secondary_keywords.copy()
+        secondary_keywords = []
+        
+    # Create search query from primary keywords
+    # if len(primary_keywords) == 1:
+    #     search_query = ' OR '.join(f'"{kw}"' for kw in (primary_keywords + secondary_keywords))
+    # else:
+    #     search_query = ' OR '.join(f'"{kw}"' for kw in primary_keywords)
+        
+    # primary_chunks = chunk_multi_word_keywords(primary_keywords)
+    primary_chunks = list(combinations(primary_keywords, 2))
+    print("Primary chunks:", primary_chunks)
+    # Fetch posts for each chunk
+    all_posts = []
+    seen_posts = set()
+
+    
+    for chunk in primary_chunks:
+        # search_query = create_reddit_search_query(chunk)
+        search_query = ' OR '.join(f'"{kw}"' for kw in chunk)
+        print("query:", search_query)
+        chunk_posts = fetch_reddit_posts(search_query, limit, duration, seen_posts)
+        all_posts.extend(chunk_posts)
+    
+    # Fetch posts using Reddit's search
+    # all_posts = fetch_reddit_posts(search_query, limit, duration)
+    
+    if not all_posts:
+        return pd.DataFrame()
+    
+    # Combine title and body for text analysis
+    posts_text = [f"{post['title']} {post['body']}" for post in all_posts]
+    
+    # Calculate TF-IDF similarity scores
+    primary_query = ' '.join(primary_keywords)
+    secondary_query = ' '.join(secondary_keywords)
+    
+    # Vectorize posts and both keyword queries
+    tfidf_matrix = vectorizer.fit_transform(
+        posts_text + [primary_query, secondary_query]
+    )
+    
+    # Calculate similarity scores for both keyword sets
+    primary_similarities = cosine_similarity(
+        tfidf_matrix[-2:-1], 
+        tfidf_matrix[:-2]
+    )[0]
+    
+    secondary_similarities = cosine_similarity(
+        tfidf_matrix[-1:], 
+        tfidf_matrix[:-2]
+    )[0]
+    
+    # Calculate keyword presence scores
+    keyword_scores = [
+        calculate_keyword_scores(text, primary_keywords, secondary_keywords)
+        for text in posts_text
+    ]
+    
+    primary_keyword_scores = np.array([score[0] for score in keyword_scores])
+    secondary_keyword_scores = np.array([score[1] for score in keyword_scores])
+    
+    # Combine TF-IDF and keyword presence scores
+    combined_primary_scores = (primary_similarities + primary_keyword_scores) / 2
+    combined_secondary_scores = (secondary_similarities + secondary_keyword_scores) / 2
+    
+    # Calculate final weighted scores
+    final_scores = (
+        primary_weight * combined_primary_scores + 
+        secondary_weight * combined_secondary_scores
+    )
+    
+    # Create DataFrame with results
+    results_df = pd.DataFrame(all_posts)
+    results_df['similarity_score'] = final_scores
+    results_df['primary_score'] = combined_primary_scores
+    results_df['secondary_score'] = combined_secondary_scores
+    
+    # Filter and sort results
+    relevant_posts = results_df[results_df['similarity_score'] >= min_similarity]
+    relevant_posts = relevant_posts.sort_values(
+        by=['similarity_score', 'score'], 
+        ascending=[False, False]
+    )
+    
+    return relevant_posts
+
+
+def chunk_multi_word_keywords(keywords: List[str], max_words: int = 2) -> List[List[str]]:
+    # Count words in each keyword
+    keyword_word_counts = [(kw, len(kw.split())) for kw in keywords]
+    
+    chunks = []
+    current_chunk = []
+    current_word_count = 0
+    
+    for keyword, word_count in keyword_word_counts:
+        # If adding this keyword would exceed max_words, start a new chunk
+        if current_word_count + word_count > max_words and current_chunk:
+            chunks.append(current_chunk)
+            current_chunk = []
+            current_word_count = 0
+        
+        # Add keyword to current chunk
+        current_chunk.append(keyword)
+        current_word_count += word_count
+    
+    # Add any remaining keywords in the last chunk
+    if current_chunk:
+        chunks.append(current_chunk)
+        
+    return chunks
+
+
+def create_reddit_search_query(keywords: List[str]) -> str:
+    """
+    Creates a Reddit-optimized search query from keywords
+    """
+    processed_queries = []
+    
+    for keyword in keywords:
+        if ' ' in keyword:
+            words = keyword.split()
+            processed_queries.append(f'"{keyword}"')  # exact phrase
+            processed_queries.extend(words)  # individual words
+        else:
+            processed_queries.append(keyword)
+    
+    return ' OR '.join(processed_queries)
+
+def chunk_keywords(keywords, chunk_size=2):
+    return [keywords[i:i + chunk_size] for i in range(0, len(keywords), chunk_size)]
