@@ -50,10 +50,10 @@ async def get_relevant_posts(userid):
     #     reply_list = []
         iter = 0
         reply_list = []
-        if len(results) < 50:
+        if len(results) < 20:
             iter = len(results)
         else:
-            iter = 50
+            iter = 20
         for i in range(iter):
             obj = results[i] #victim of the crime
             llm_reply = "Add your reply here"
@@ -66,18 +66,15 @@ async def get_relevant_posts(userid):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error occurred: {str(e)}")
     
-    
-@router.get("/relevant_posts_weekly")
-async def get_relevant_posts(userid):
-    # Get keywords from Firestore
-    keywords = await firestore_service.get_keywords(user_id=userid)
-    keywords = split_csv_string(keywords)
-
+async def cron_job_helper(userid):
+    primary = await firestore_service.get_primary_keywords(user_id=userid)
+    secondary = await firestore_service.get_secondary_keywords(user_id=userid)
+    primary = primary.split(',')
+    secondary = secondary.split(',')
     keywords = KeywordsInput(
-        primary_keywords=keywords[0],
-        secondary_keywords=keywords[1],
+        primary_keywords=primary,
+        secondary_keywords=secondary,
     )
-    #reply_list = []
     try:
         # Find relevant posts
         results_df = find_relevant_posts(
@@ -101,15 +98,16 @@ async def get_relevant_posts(userid):
     #     reply_list = []
         iter = 0
         reply_list = []
-        if len(results) < 20:
+        if len(results) < 10:
             iter = len(results)
         else:
-            iter = 20
+            iter = 10
         for i in range(iter):
             obj = results[i] #victim of the crime
             llm_reply = "Add your reply here"
             # reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], llm_reply]
-            reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], "this is a test reply", obj["url"], obj["created_utc"]]
+
+            reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], llm_reply, obj["url"], obj["created_utc"]]
 
             reply_list.append(reddit_object)
             await firestore_service.add_post(userid, reddit_object)
@@ -119,3 +117,11 @@ async def get_relevant_posts(userid):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error occurred: {str(e)}")
+
+# @router.get("/relevant_posts_weekly")
+async def get_relevant_posts_weekly_job():
+    # Get keywords from Firestore
+    print("cron jobbb")
+    active_users = await firestore_service.get_active_user_ids()
+    for user in active_users:
+        await cron_job_helper(user)
