@@ -82,7 +82,7 @@ async def cron_job_helper(userid):
             secondary_keywords=keywords.secondary_keywords,
             limit=keywords.limit,
             min_similarity=keywords.min_similarity,
-            duration="week"
+            duration="day"
         )
 
         if results_df.empty:

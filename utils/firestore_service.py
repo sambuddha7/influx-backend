@@ -185,6 +185,12 @@ class FirestoreService:
                 post_data["date_created"] = datetime.utcfromtimestamp(reddit_object[6]).isoformat() + "Z"
             else:
                 raise TypeError(f"Unexpected type for date_created: {type(reddit_object[6])}")
+            if isinstance(post_data["createdAt"], datetime):
+                post_data["createdAt"] = post_data["createdAt"].isoformat() + "Z"
+            elif isinstance(post_data["createdAt"], (int, float)):
+                post_data["createdAt"] = datetime.utcfromtimestamp(post_data["createdAt"]).isoformat() + "Z"
+            else:
+                raise TypeError(f"Unexpected type for createdAt: {type(post_data['createdAt'])}")
 
             
             # Reference to the "posts" subcollection for the user

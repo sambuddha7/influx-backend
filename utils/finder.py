@@ -39,7 +39,9 @@ def get_keywords(description):
     <instructions>
 1. Please generate 10 keywords from the following company description:\n\n{description}
 2. Provide just the csv, without any additional text or explanations.
-3. Here's a sample of a reply : "keyword1, keyword2, keyword3, keyword4, keyword5, keyword6, keyword7, keyword8, keyword9, keyword10"
+3. Don't give too industry specific keywords but have a good mix of common words as well.
+4. Give either one or two keywords max.
+5. Here's a sample of a reply : "keyword1, keyword2, keyword3, keyword4, keyword5, keyword6, keyword7, keyword8, keyword9, keyword10"
 </instructions>
     
     """
