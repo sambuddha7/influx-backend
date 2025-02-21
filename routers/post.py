@@ -50,10 +50,10 @@ async def get_relevant_posts(userid):
     #     reply_list = []
         iter = 0
         reply_list = []
-        if len(results) < 20:
+        if len(results) < 5:
             iter = len(results)
         else:
-            iter = 20
+            iter = 5
         for i in range(iter):
             obj = results[i] #victim of the crime
             llm_reply = "Add your reply here"
@@ -69,6 +69,7 @@ async def get_relevant_posts(userid):
 async def cron_job_helper(userid):
     primary = await firestore_service.get_primary_keywords(user_id=userid)
     secondary = await firestore_service.get_secondary_keywords(user_id=userid)
+    print(userid)
     primary = primary.split(',')
     secondary = secondary.split(',')
     keywords = KeywordsInput(
@@ -98,10 +99,10 @@ async def cron_job_helper(userid):
     #     reply_list = []
         iter = 0
         reply_list = []
-        if len(results) < 10:
+        if len(results) < 1:
             iter = len(results)
         else:
-            iter = 10
+            iter = 1
         for i in range(iter):
             obj = results[i] #victim of the crime
             llm_reply = "Add your reply here"
