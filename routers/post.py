@@ -69,9 +69,10 @@ async def get_relevant_posts(userid):
 async def cron_job_helper(userid):
     primary = await firestore_service.get_primary_keywords(user_id=userid)
     secondary = await firestore_service.get_secondary_keywords(user_id=userid)
-    print(userid)
-    primary = primary.split(',')
-    secondary = secondary.split(',')
+    if isinstance(primary, str):
+        primary = primary.split(',')
+    if isinstance(secondary, str):
+        secondary = secondary.split(',')
     keywords = KeywordsInput(
         primary_keywords=primary,
         secondary_keywords=secondary,
