@@ -50,10 +50,10 @@ async def get_relevant_posts(userid):
     #     reply_list = []
         iter = 0
         reply_list = []
-        if len(results) < 5:
+        if len(results) < 50:
             iter = len(results)
         else:
-            iter = 5
+            iter = 50
         for i in range(iter):
             obj = results[i] #victim of the crime
             llm_reply = "Add your reply here"
@@ -100,10 +100,10 @@ async def cron_job_helper(userid):
     #     reply_list = []
         iter = 0
         reply_list = []
-        if len(results) < 1:
+        if len(results) < 5:
             iter = len(results)
         else:
-            iter = 1
+            iter = 5
         for i in range(iter):
             obj = results[i] #victim of the crime
             llm_reply = "Add your reply here"

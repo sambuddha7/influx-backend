@@ -9,6 +9,7 @@ import os
 import re 
 from dotenv import load_dotenv
 from itertools import combinations
+from datetime import datetime, timedelta
 
 
 load_dotenv()
@@ -162,7 +163,12 @@ def fetch_reddit_posts(search_query: str, limit: int, duration, seen_posts) -> L
         if is_promotional(submission) :
             continue
         
-        #subreddit size check
+        if duration == 'day':
+            post_age = datetime.utcnow() - datetime.utcfromtimestamp(submission.created_utc)
+            if post_age > timedelta(days=1):
+                continue
+        
+        
         subreddit = submission.subreddit
         
         if subreddit.subscribers < 100:
