@@ -194,6 +194,7 @@ def fetch_reddit_posts(search_query: str, limit: int, duration, seen_posts) -> L
             'subreddit': submission.subreddit.display_name
         })
         seen_posts.add(post_identifier)
+
     return posts
 
 def calculate_keyword_scores(text: str, 
@@ -366,7 +367,6 @@ def find_relevant_posts_extra(primary_keywords: List[str],
     # Fetch posts for each chunk
     all_posts = []
     seen_posts = set()
-
     
     for chunk in primary_chunks:
         # search_query = create_reddit_search_query(chunk)

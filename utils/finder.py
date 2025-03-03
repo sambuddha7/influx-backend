@@ -3,7 +3,8 @@ import os
 from dotenv import load_dotenv
 import praw
 from anthropic import Anthropic
-
+from datetime import datetime
+import pandas as pd
 load_dotenv()
 
 reddit = praw.Reddit(
@@ -22,14 +23,40 @@ client = Anthropic(
 def get_rising_posts(subreddit_name, limit=5):
     subreddit = reddit.subreddit(subreddit_name)
     rising_posts = subreddit.rising(limit=limit)
-    return [[post.id, post.title, post.selftext] for post in rising_posts]
+    posts = []
+    
+    for post in rising_posts:
+        posts.append({
+            'id': post.id,
+            'title': post.title,
+            'body': post.selftext,
+            'url': f"https://reddit.com{post.permalink}",
+            'score': post.score,
+            'created_utc': datetime.fromtimestamp(post.created_utc),
+            'num_comments': post.num_comments,
+            'subreddit': post.subreddit.display_name
+        })
+    
+    return pd.dataframe(posts)
 
-
-# for multiple subreddits "subreddit1+subreddit2"
 def get_hot_posts(subreddit_name, limit=5):
     subreddit = reddit.subreddit(subreddit_name)
     hot_posts = subreddit.hot(limit=limit)
-    return [[post.id, post.title, post.selftext] for post in hot_posts]
+    posts = []
+    
+    for post in hot_posts:
+        posts.append({
+            'id': post.id,
+            'title': post.title,
+            'body': post.selftext,
+            'url': f"https://reddit.com{post.permalink}",
+            'score': post.score,
+            'created_utc': datetime.fromtimestamp(post.created_utc),
+            'num_comments': post.num_comments,
+            'subreddit': post.subreddit.display_name
+        })
+    
+    return pd.dataframe(posts)
 
 
 def get_keywords(description):
@@ -134,3 +161,51 @@ Text to reply to:
 # add a filter posts feature here through some llm
 
 ########################################################################
+def filter_best_subreddits(subreddit_list, company_description, num_subreddits=10):
+    """
+    Filter and select the best subreddits for marketing a company based on its description.
+    
+    Args:
+        subreddit_list (list or set): List of subreddit names to filter
+        company_description (str): Description of the company to market
+        num_subreddits (int): Number of subreddits to return (default: 10)
+        
+    Returns:
+        list: List of best subreddits in the requested format
+    """
+    system_prompt = "You are an AI marketing expert specializing in Reddit marketing strategy."
+    
+    user_prompt = f"""Please analyze the following list of subreddits and select exactly {num_subreddits} that would be best for marketing a company based on the description provided.
+
+<company_description>
+{company_description}
+</company_description>
+
+<subreddit_list>
+{', '.join(sorted(subreddit_list))}
+</subreddit_list>
+
+<instructions>
+1. Select exactly {num_subreddits} subreddits from the provided list that would be most relevant for marketing the described company.
+2. Include a good mix of large/popular subreddits and smaller/medium-sized ones for a balanced marketing approach.
+3. Only select subreddits from the provided list.
+4. Return ONLY a Python set literal containing your selections, in exactly this format: {{'subreddit1', 'subreddit2', 'subreddit3'}}
+5. Do not include any explanation, introduction, or additional text.
+</instructions>
+"""
+    
+    try:
+        message = client.messages.create(
+            model="claude-3-5-sonnet-latest",
+            system=system_prompt,
+            max_tokens=1000,
+            messages=[
+                {"role": "user", "content": user_prompt}
+            ]
+        )
+        
+        response = message.content[0].text.strip()
+        return response
+            
+    except Exception as e:
+        return f"Error filtering subreddits: {str(e)}"

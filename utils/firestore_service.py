@@ -214,6 +214,17 @@ class FirestoreService:
         if doc.exists:
             return doc.to_dict().get('replies', [])
         return []
+    
+    async def get_user_posts(self, user_id):
+        posts_collection_ref = self.db.collection("reddit-posts").document(user_id).collection("posts")
+        
+        try:
+            posts = posts_collection_ref.get()
+            post_list = [post.to_dict() for post in posts]
+            return post_list
+        except Exception as e:
+            print(f"Error fetching posts: {e}")
+            return []
 
 # Example usage in FastAPI routes
 app = FastAPI()
