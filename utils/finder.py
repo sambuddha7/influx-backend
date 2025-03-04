@@ -37,7 +37,7 @@ def get_rising_posts(subreddit_name, limit=5):
             'subreddit': post.subreddit.display_name
         })
     
-    return pd.dataframe(posts)
+    return pd.DataFrame(posts)
 
 def get_hot_posts(subreddit_name, limit=5):
     subreddit = reddit.subreddit(subreddit_name)
@@ -56,7 +56,7 @@ def get_hot_posts(subreddit_name, limit=5):
             'subreddit': post.subreddit.display_name
         })
     
-    return pd.dataframe(posts)
+    return pd.DataFrame(posts)
 
 
 def get_keywords(description):

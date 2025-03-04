@@ -143,7 +143,7 @@ async def get_relevant_posts_weekly_job():
         
 @router.get("/subreddit_posts")
 async def get_relevant_sub_posts(subreddit):
-    """Get current metrics for all tracked replies"""
+    """Get posts for a subreddit"""
     try:
         # Find relevant posts
         results_df = get_rising_posts(subreddit)
@@ -157,7 +157,9 @@ async def get_relevant_sub_posts(subreddit):
         # subreddit
         # title
         # body
-    #     reply_list = []
+        #url
+        # date created
+        # reply_list = []
         iter = 0
         reply_list = []
         if len(results) < 5:
@@ -165,7 +167,7 @@ async def get_relevant_sub_posts(subreddit):
         else:
             iter = 5
         for i in range(iter):
-            obj = results[i] #victim of the crime
+            obj = results[i] 
             llm_reply = "Add your reply here"
             reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], llm_reply, obj["url"], obj["created_utc"]]
             reply_list.append(reddit_object)
