@@ -69,7 +69,7 @@ async def get_relevant_posts(userid):
     
 
 @router.get("/get_subreddits")
-async def get_subreddts(userid):
+async def get_subreddits(userid):
     posts = await firestore_service.get_user_posts(userid)  
     print(posts)
     subs = {post["subreddit"] for post in posts if "subreddit" in post} 
