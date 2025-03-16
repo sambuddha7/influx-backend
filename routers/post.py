@@ -22,6 +22,8 @@ async def get_relevant_posts(userid):
     # keywords = split_csv_string(keywords)
     primary = await firestore_service.get_primary_keywords(user_id=userid)
     secondary = await firestore_service.get_secondary_keywords(user_id=userid)
+    excluded_subs = await firestore_service.get_excluded_reddits(user_id=userid)
+    print(excluded_subs)
     primary = primary.split(',')
     secondary = secondary.split(',')
     keywords = KeywordsInput(
@@ -35,7 +37,8 @@ async def get_relevant_posts(userid):
             primary_keywords=keywords.primary_keywords,
             secondary_keywords=keywords.secondary_keywords,
             limit=keywords.limit,
-            min_similarity=keywords.min_similarity
+            min_similarity=keywords.min_similarity,
+            excluded_subs=excluded_subs
         )
         
         if results_df.empty:

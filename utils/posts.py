@@ -139,63 +139,136 @@ def is_promotional(submission) -> bool:
             return True
                
         return False
-
-def fetch_reddit_posts(search_query: str, limit: int, duration, seen_posts) -> List[Dict]:
+def fetch_reddit_posts(search_query: str, limit: int, duration, seen_posts, excluded_subs) -> List[Dict]:
     """
-    Fetch posts from all of Reddit based on search query
-    
+    Fetch posts from all of Reddit based on a search query.
+
     Args:
         search_query (str): Search query string
         limit (int): Maximum number of posts to fetch
-        
+        duration (str): Time filter for the search (e.g., 'day', 'week')
+        seen_posts (set): A set of post identifiers to avoid duplicates
+        excluded_subs (list or set): List of subreddit names to exclude (case-insensitive)
+
     Returns:
         List[Dict]: List of posts with their details
     """
     posts = []
-    # seen_posts = set()
-    
-    for submission in reddit.subreddit("all").search(
-        search_query, 
-        sort='relevance', 
-        time_filter=duration,
-        limit=limit
-    ):
-        if is_promotional(submission) :
-            continue
-        
-        if duration == 'day':
-            post_age = datetime.utcnow() - datetime.utcfromtimestamp(submission.created_utc)
-            if post_age > timedelta(days=1):
+    excluded_set = set()
+
+    if not isinstance(excluded_subs, (list, set)):  
+        excluded_subs = set() 
+    else:
+        excluded_set = {s.lower() for s in excluded_subs}
+
+    try:
+        for submission in reddit.subreddit("all").search(
+            search_query, sort="relevance", time_filter=duration, limit=limit
+        ):
+            # Ignore promotional posts
+            if is_promotional(submission):
                 continue
-        
-        
-        subreddit = submission.subreddit
-        
-        if subreddit.subscribers < 100:
-            continue
-        
-        normalized_title = "".join(submission.title.lower().split())
-            
-        author = submission.author.name if submission.author else None
-        
-        post_identifier = (author, normalized_title)
-        
-        if post_identifier in seen_posts:
-            continue  
-        
-        posts.append({
-            'id': submission.id,
-            'title': submission.title,
-            'body': submission.selftext,
-            'url': f"https://reddit.com{submission.permalink}",
-            'score': submission.score,
-            'created_utc': datetime.fromtimestamp(submission.created_utc),
-            'num_comments': submission.num_comments,
-            'subreddit': submission.subreddit.display_name
-        })
-        seen_posts.add(post_identifier)
+
+            # Ignore posts older than a day if `duration == 'day'`
+            if duration == "day":
+                post_age = datetime.utcnow() - datetime.utcfromtimestamp(submission.created_utc)
+                if post_age > timedelta(days=1):
+                    continue
+
+            # Validate subreddit details
+            subreddit = getattr(submission, "subreddit", None)  
+            if not subreddit or getattr(subreddit, "subscribers", 0) < 100:
+                continue
+   
+            # Exclude specific subreddits
+            if subreddit.display_name.lower() in excluded_set:
+                continue
+
+            # Normalize title to avoid duplicate posts
+            normalized_title = "".join(submission.title.lower().split())
+
+            author = submission.author.name if submission.author else None
+            post_identifier = (author, normalized_title)
+
+            if post_identifier in seen_posts:
+                continue  
+
+            posts.append({
+                "id": submission.id,
+                "title": submission.title,
+                "body": submission.selftext,
+                "url": f"https://reddit.com{submission.permalink}",
+                "score": submission.score,
+                "created_utc": datetime.fromtimestamp(submission.created_utc),
+                "num_comments": submission.num_comments,
+                "subreddit": subreddit.display_name
+            })
+            seen_posts.add(post_identifier)
+    
+    except Exception as e:
+        print(f"Error fetching Reddit posts: {e}")
 
     return posts
+# def fetch_reddit_posts(search_query: str, limit: int, duration, seen_posts, excluded_subs) -> List[Dict]:
+#     """
+#     Fetch posts from all of Reddit based on search query
+    
+#     Args:
+#         search_query (str): Search query string
+#         limit (int): Maximum number of posts to fetch
+        
+#     Returns:
+#         List[Dict]: List of posts with their details
+#     """
+#     posts = []
+#     # seen_posts = set()
+#     for submission in reddit.subreddit("all").search(
+#         search_query, 
+#         sort='relevance', 
+#         time_filter=duration,
+#         limit=limit
+#     ):
+#         if is_promotional(submission) :
+#             continue
+        
+#         if duration == 'day':
+#             post_age = datetime.utcnow() - datetime.utcfromtimestamp(submission.created_utc)
+#             if post_age > timedelta(days=1):
+#                 continue
+        
+        
+#         subreddit = submission.subreddit
+        
+#         if subreddit.subscribers < 100:
+#             continue
+        
+#         excluded_set = {s.lower() for s in excluded_subs}
+        
+#         if subreddit.display_name.lower() in excluded_set : 
+#             continue 
+        
+#         normalized_title = "".join(submission.title.lower().split())
+            
+#         author = submission.author.name if submission.author else None
+        
+#         post_identifier = (author, normalized_title)
+        
+#         if post_identifier in seen_posts:
+#             continue  
+        
+#         posts.append({
+#             'id': submission.id,
+#             'title': submission.title,
+#             'body': submission.selftext,
+#             'url': f"https://reddit.com{submission.permalink}",
+#             'score': submission.score,
+#             'created_utc': datetime.fromtimestamp(submission.created_utc),
+#             'num_comments': submission.num_comments,
+#             'subreddit': submission.subreddit.display_name
+#         })
+#         seen_posts.add(post_identifier)
+
+#     return posts
 
 def calculate_keyword_scores(text: str, 
                            primary_keywords: List[str], 
@@ -228,6 +301,7 @@ def calculate_keyword_scores(text: str,
 def find_relevant_posts(primary_keywords: List[str],
                        secondary_keywords: List[str],
                        limit: int,
+                       excluded_subs: List[str],
                        min_similarity: float = 0.1,
                        primary_weight: float = 0.7,
                        secondary_weight: float = 0.3,
@@ -249,7 +323,7 @@ def find_relevant_posts(primary_keywords: List[str],
     if True : 
         return find_relevant_posts_extra(primary_keywords,
                        secondary_keywords,
-                       limit, min_similarity)
+                       limit, excluded_subs,min_similarity)
     
     
     if primary_keywords == [""]:
@@ -333,6 +407,7 @@ def find_relevant_posts(primary_keywords: List[str],
 def find_relevant_posts_extra(primary_keywords: List[str],
                        secondary_keywords: List[str],
                        limit: int,
+                       excluded_subs: List[str],
                        min_similarity: float = 0.1,
                        primary_weight: float = 0.7,
                        secondary_weight: float = 0.3,
@@ -372,7 +447,7 @@ def find_relevant_posts_extra(primary_keywords: List[str],
         # search_query = create_reddit_search_query(chunk)
         search_query = ' OR '.join(f'"{kw}"' for kw in chunk)
         print("query:", search_query)
-        chunk_posts = fetch_reddit_posts(search_query, limit, duration, seen_posts)
+        chunk_posts = fetch_reddit_posts(search_query, limit, duration, seen_posts, excluded_subs)
         all_posts.extend(chunk_posts)
     
     # Fetch posts using Reddit's search

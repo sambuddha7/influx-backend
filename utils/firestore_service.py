@@ -226,6 +226,12 @@ class FirestoreService:
             print(f"Error fetching posts: {e}")
             return []
 
+    async def get_excluded_reddits(self, user_id: str) -> List[str]:
+        user_doc = self.db.collection('excluded-subreddits').document(user_id)
+        doc = user_doc.get()
+        if doc.exists:
+            return doc.to_dict().get('subreddits', '')
+        return []
 # Example usage in FastAPI routes
 app = FastAPI()
 firestore_service = FirestoreService()
