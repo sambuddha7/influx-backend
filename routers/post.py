@@ -24,7 +24,6 @@ async def get_relevant_posts(userid):
     secondary = await firestore_service.get_secondary_keywords(user_id=userid)
     excluded_subs = await firestore_service.get_excluded_reddits(user_id=userid)
     reddit_posts = await firestore_service.get_user_posts(user_id=userid)
-    print(reddit_posts)
     primary = primary.split(',')
     secondary = secondary.split(',')
     keywords = KeywordsInput(

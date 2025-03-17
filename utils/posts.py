@@ -454,6 +454,8 @@ def find_relevant_posts_extra(primary_keywords: List[str],
         
     # primary_chunks = chunk_multi_word_keywords(primary_keywords)
     primary_chunks = list(combinations(primary_keywords, 2))
+    if not primary_chunks: 
+        primary_chunks=primary_keywords
     print("Primary chunks:", primary_chunks)
     # Fetch posts for each chunk
     all_posts = []
@@ -461,7 +463,10 @@ def find_relevant_posts_extra(primary_keywords: List[str],
     
     for chunk in primary_chunks:
         # search_query = create_reddit_search_query(chunk)
-        search_query = ' OR '.join(f'"{kw}"' for kw in chunk)
+        if len(primary_keywords) == 1: 
+            search_query = primary_keywords[0]
+        else:     
+            search_query = ' OR '.join(f'"{kw}"' for kw in chunk)
         print("query:", search_query)
         chunk_posts = fetch_reddit_posts(search_query, limit, duration, seen_posts, excluded_subs, reddit_posts)
         all_posts.extend(chunk_posts)
