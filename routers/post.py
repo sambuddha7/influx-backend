@@ -23,7 +23,8 @@ async def get_relevant_posts(userid):
     primary = await firestore_service.get_primary_keywords(user_id=userid)
     secondary = await firestore_service.get_secondary_keywords(user_id=userid)
     excluded_subs = await firestore_service.get_excluded_reddits(user_id=userid)
-    print(excluded_subs)
+    reddit_posts = await firestore_service.get_user_posts(user_id=userid)
+    print(reddit_posts)
     primary = primary.split(',')
     secondary = secondary.split(',')
     keywords = KeywordsInput(
@@ -38,7 +39,9 @@ async def get_relevant_posts(userid):
             secondary_keywords=keywords.secondary_keywords,
             limit=keywords.limit,
             min_similarity=keywords.min_similarity,
-            excluded_subs=excluded_subs
+            excluded_subs=excluded_subs, 
+            reddit_posts=reddit_posts,
+            duration="month"
         )
         
         if results_df.empty:
@@ -84,6 +87,8 @@ async def get_subreddits(userid):
 async def cron_job_helper(userid):
     primary = await firestore_service.get_primary_keywords(user_id=userid)
     secondary = await firestore_service.get_secondary_keywords(user_id=userid)
+    excluded_subs = await firestore_service.get_excluded_reddits(user_id=userid)
+    reddit_posts = await firestore_service.get_user_posts(user_id=userid)
     if isinstance(primary, str):
         primary = primary.split(',')
     if isinstance(secondary, str):
@@ -94,14 +99,15 @@ async def cron_job_helper(userid):
     )
     try:
         # Find relevant posts
-        results_df, subreddits = find_relevant_posts(
+        results_df = find_relevant_posts(
             primary_keywords=keywords.primary_keywords,
             secondary_keywords=keywords.secondary_keywords,
             limit=keywords.limit,
             min_similarity=keywords.min_similarity,
-            duration="day"
+            duration="day",
+            excluded_subs=excluded_subs,
+            reddit_posts=reddit_posts
         )
-        print(subreddits)
         if results_df.empty:
             return []
 
@@ -115,10 +121,10 @@ async def cron_job_helper(userid):
     #     reply_list = []
         iter = 0
         reply_list = []
-        if len(results) < 5:
+        if len(results) < 20:
             iter = len(results)
         else:
-            iter = 5
+            iter = 20
         for i in range(iter):
             obj = results[i] #victim of the crime
             llm_reply = "Add your reply here"

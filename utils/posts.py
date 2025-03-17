@@ -139,7 +139,8 @@ def is_promotional(submission) -> bool:
             return True
                
         return False
-def fetch_reddit_posts(search_query: str, limit: int, duration, seen_posts, excluded_subs) -> List[Dict]:
+    
+def fetch_reddit_posts(search_query: str, limit: int, duration, seen_posts, excluded_subs, reddit_posts) -> List[Dict]:
     """
     Fetch posts from all of Reddit based on a search query.
 
@@ -160,7 +161,9 @@ def fetch_reddit_posts(search_query: str, limit: int, duration, seen_posts, excl
         excluded_subs = set() 
     else:
         excluded_set = {s.lower() for s in excluded_subs}
-
+        
+    existing_post_ids=set()
+    existing_post_ids = {post["id"] for post in reddit_posts}
     try:
         for submission in reddit.subreddit("all").search(
             search_query, sort="relevance", time_filter=duration, limit=limit
@@ -170,10 +173,21 @@ def fetch_reddit_posts(search_query: str, limit: int, duration, seen_posts, excl
                 continue
 
             # Ignore posts older than a day if `duration == 'day'`
+            print(duration)
             if duration == "day":
+                print("cron job filter")
                 post_age = datetime.utcnow() - datetime.utcfromtimestamp(submission.created_utc)
+                if submission.id in existing_post_ids :
+                    print("duplicate found")
+                    continue
                 if post_age > timedelta(days=1):
                     continue
+            # print("Current UTC time:", datetime.utcnow())
+            # print("Post creation time:", datetime.utcfromtimestamp(submission.created_utc))
+            # post_age = datetime.utcnow() - datetime.utcfromtimestamp(submission.created_utc)
+            # print("Post age:", post_age)
+            # if post_age > timedelta(days=1):
+            #     continue
 
             # Validate subreddit details
             subreddit = getattr(submission, "subreddit", None)  
@@ -302,10 +316,11 @@ def find_relevant_posts(primary_keywords: List[str],
                        secondary_keywords: List[str],
                        limit: int,
                        excluded_subs: List[str],
+                       reddit_posts: List[dict],
+                       duration: str,
                        min_similarity: float = 0.1,
                        primary_weight: float = 0.7,
-                       secondary_weight: float = 0.3,
-                       duration: str="month") -> pd.DataFrame:
+                       secondary_weight: float = 0.3) -> pd.DataFrame:
     """
     Find posts relevant to given primary and secondary keywords
     
@@ -323,7 +338,7 @@ def find_relevant_posts(primary_keywords: List[str],
     if True : 
         return find_relevant_posts_extra(primary_keywords,
                        secondary_keywords,
-                       limit, excluded_subs,min_similarity)
+                       limit, excluded_subs, reddit_posts,duration, min_similarity)
     
     
     if primary_keywords == [""]:
@@ -408,10 +423,11 @@ def find_relevant_posts_extra(primary_keywords: List[str],
                        secondary_keywords: List[str],
                        limit: int,
                        excluded_subs: List[str],
+                       reddit_posts: List[dict],
+                       duration: str,
                        min_similarity: float = 0.1,
                        primary_weight: float = 0.7,
-                       secondary_weight: float = 0.3,
-                       duration: str="month") -> pd.DataFrame:
+                       secondary_weight: float = 0.3) -> pd.DataFrame:
     """
     Find posts relevant to given primary and secondary keywords
     
@@ -447,7 +463,7 @@ def find_relevant_posts_extra(primary_keywords: List[str],
         # search_query = create_reddit_search_query(chunk)
         search_query = ' OR '.join(f'"{kw}"' for kw in chunk)
         print("query:", search_query)
-        chunk_posts = fetch_reddit_posts(search_query, limit, duration, seen_posts, excluded_subs)
+        chunk_posts = fetch_reddit_posts(search_query, limit, duration, seen_posts, excluded_subs, reddit_posts)
         all_posts.extend(chunk_posts)
     
     # Fetch posts using Reddit's search
