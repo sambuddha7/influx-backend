@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from utils.finder import get_rising_posts, get_hot_posts, get_reply, get_keywords, get_reply_comm
+from utils.finder import get_rising_posts, get_hot_posts, get_reply, get_keywords, get_reply_comm, get_reply_feedback
 from utils.tracker import MetricsTracker
 from typing import List
 from dotenv import load_dotenv
@@ -66,6 +66,13 @@ async def get_reps(post: RedditPost, userid):
     sample_reply =  await firestore_service.get_sample_reply(user_id=userid)#4 
     marketing_goals = await firestore_service.get_marketing_objectives(user_id=userid) #5
     llm_reply = get_reply(f"title:{post.title} content: {post.content}", company_name, company_description, user_role, sample_reply, marketing_goals) # llm call 
+    return llm_reply
+
+@router.post("/regenerate-reply")
+async def get_reps_feedback(post: RedditPost, feedback: str):
+    print(feedback)
+    llm_reply = get_reply_feedback( post.suggested_reply, feedback)
+    print(llm_reply)
     return llm_reply
 
 @router.post("/community_reply")

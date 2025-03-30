@@ -144,6 +144,41 @@ Text to reply to:
                 {"role": "user", "content": user_prompt}
             ]
         )
+        string = message.content[0].text
+        cleaned_string = string.strip('"')
+
+        return cleaned_string
+    except Exception as e:
+        return f"Error getting summary: {str(e)}"
+def get_reply_feedback(initial, feedback):
+    system_prompt ="you help generate authentic replies"
+    user_prompt = f"""this is the initial reply you generated : {initial}. this is the feedback i want you to use to change: {feedback}
+
+<instructions>
+
+1. Provide just the reply, without any additional text or explanations.
+
+</instructions>
+
+
+"""
+    try:
+        message = client.messages.create(
+            # model="claude-3-opus-20240229",
+            model="claude-3-5-sonnet-latest",
+            # model="claude-3-haiku-20240307",
+            system=system_prompt,
+            max_tokens=1000,
+            # messages=[
+            #     {
+            #         "role": "user",
+            #         "content": f"{prompt}\n\nText to reply to:\n{text_to_reply}"
+            #     }
+            # ]
+            messages=[
+                {"role": "user", "content": user_prompt}
+            ]
+        )
 
         string = message.content[0].text
         cleaned_string = string.strip('"')
@@ -151,6 +186,7 @@ Text to reply to:
         return cleaned_string
     except Exception as e:
         return f"Error getting summary: {str(e)}"
+
 def get_reply(text_to_reply, company_name, company_description, user_role, sample_replies, marketing_objectives):
     
     marketing_objectives = ""
