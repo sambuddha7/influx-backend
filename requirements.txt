@@ -108,3 +108,4 @@ wcwidth==0.2.13
 websocket-client==1.8.0
 yarg==0.1.10
 zipp==3.21.0
+sentence_transformers

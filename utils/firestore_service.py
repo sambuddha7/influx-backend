@@ -88,7 +88,7 @@ class FirestoreService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error fetching keywords: {str(e)}")
     async def get_company_name(self, user_id: str) -> Optional[str]:
-        """Get company description for a specific user"""
+        """Get company name for a specific user"""
         try:
             doc_ref = self.db.collection('onboarding').document(user_id)
             doc = doc_ref.get()

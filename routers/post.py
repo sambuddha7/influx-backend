@@ -5,6 +5,7 @@ import pandas as pd
 from utils.posts import find_relevant_posts, split_csv_string
 from utils.firestore_service import FirestoreService
 from utils.finder import filter_best_subreddits, get_hot_posts, get_rising_posts
+from utils.post_scoring import final_df
 
 firestore_service = FirestoreService()
 router = APIRouter()
@@ -56,15 +57,19 @@ async def get_relevant_posts(userid):
     #     reply_list = []
         iter = 0
         reply_list = []
-        if len(results) < 50:
+        if len(results) < 10:
             iter = len(results)
         else:
-            iter = 50
+            iter = 10
         for i in range(iter):
             obj = results[i] #victim of the crime
             llm_reply = "Add your reply here"
             reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], llm_reply, obj["url"], obj["created_utc"]]
             reply_list.append(reddit_object)
+            
+        company_description = await firestore_service.get_company_description(user_id=userid)
+        reply_list = final_df(reply_list, company_description)
+        print(reply_list)
 
         return reply_list
         #return results
@@ -120,10 +125,10 @@ async def cron_job_helper(userid):
     #     reply_list = []
         iter = 0
         reply_list = []
-        if len(results) < 20:
+        if len(results) < 5:
             iter = len(results)
         else:
-            iter = 20
+            iter = 5
         for i in range(iter):
             obj = results[i] #victim of the crime
             llm_reply = "Add your reply here"
@@ -180,6 +185,7 @@ async def get_relevant_sub_posts(subreddit):
             reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], llm_reply, obj["url"], obj["created_utc"]]
             reply_list.append(reddit_object)
 
+        
         return reply_list
         #return results
 
