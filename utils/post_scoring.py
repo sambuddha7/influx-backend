@@ -2,6 +2,8 @@ import pandas as pd
 import torch
 from sentence_transformers import SentenceTransformer, util
 from transformers import pipeline
+import gc
+import multiprocessing
 
 def wrap_df(reddit_posts):
     columns = ["id", "subreddit", "title", "body", "llm_reply", "url", "created_utc"]
@@ -29,31 +31,66 @@ def add_semantic_relevance_score(df, company_desc, model_name="all-MiniLM-L6-v2"
     df["semantic_score"] = scores.squeeze().cpu().numpy()
     return df
 
+# def add_sentiment_intent_analysis(df):
+#     """
+#     Adds sentiment and intent analysis by processing texts in batches.
+#     """
+#     # Initialize pipelines once
+#     sentiment_pipeline = pipeline("sentiment-analysis")
+#     zero_shot_pipeline = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+#     candidate_labels = ["problem statement", "seeking recommendation", "discussion", "off-topic"]
+
+#     texts = df["full text"].tolist()
+
+#     # Batch process sentiment analysis
+#     sentiment_results = sentiment_pipeline(texts, batch_size=16)
+#     sentiment_labels = [res["label"] for res in sentiment_results]
+#     sentiment_scores = [res["score"] for res in sentiment_results]
+
+#     # Batch process zero-shot classification for intent analysis
+#     intent_results = zero_shot_pipeline(texts, candidate_labels=candidate_labels, batch_size=16)
+#     intent_labels = [res["labels"][0] for res in intent_results]
+#     intent_scores = [res["scores"][0] for res in intent_results]
+
+#     df["sentiment"] = sentiment_labels
+#     df["sentiment_score"] = sentiment_scores
+#     df["intent"] = intent_labels
+#     df["intent_score"] = intent_scores
+
+#     return df
 def add_sentiment_intent_analysis(df):
     """
     Adds sentiment and intent analysis by processing texts in batches.
+    Cleans up models to prevent leaked semaphores on shutdown.
     """
-    # Initialize pipelines once
+    # Initialize pipelines
     sentiment_pipeline = pipeline("sentiment-analysis")
     zero_shot_pipeline = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
     candidate_labels = ["problem statement", "seeking recommendation", "discussion", "off-topic"]
 
     texts = df["full text"].tolist()
 
-    # Batch process sentiment analysis
+    # Sentiment
     sentiment_results = sentiment_pipeline(texts, batch_size=16)
     sentiment_labels = [res["label"] for res in sentiment_results]
     sentiment_scores = [res["score"] for res in sentiment_results]
 
-    # Batch process zero-shot classification for intent analysis
+    # Intent
     intent_results = zero_shot_pipeline(texts, candidate_labels=candidate_labels, batch_size=16)
     intent_labels = [res["labels"][0] for res in intent_results]
     intent_scores = [res["scores"][0] for res in intent_results]
 
+    # Add to df
     df["sentiment"] = sentiment_labels
     df["sentiment_score"] = sentiment_scores
     df["intent"] = intent_labels
     df["intent_score"] = intent_scores
+
+    # ✨ CLEANUP to avoid semaphore warnings
+    del sentiment_pipeline
+    del zero_shot_pipeline
+    torch.cuda.empty_cache()  # just in case, even if you're on CPU
+    gc.collect()
 
     return df
 
@@ -98,31 +135,18 @@ def add_final_promo_score(df, weights=None, boost_map=None):
     return df
 
 def final_df(reddit_posts, company_description):
-    """
-    Processes reddit posts to calculate promotional scores.
-    """
     df = wrap_df(reddit_posts)
-    # Log a summary rather than printing the full DataFrame to reduce overhead
-    print(df.head())
-
     df = add_semantic_relevance_score(df, company_description)
     df = add_sentiment_intent_analysis(df)
     df = add_final_promo_score(df)
-    
-    # Print a sorted summary of key columns
-    print(
-        df[["title", "semantic_score", "intent", "intent_score", "sentiment", "sentiment_score", "promo_score"]]
-        .sort_values(by="promo_score", ascending=False)
-        .head()
-    )
 
-    # Create a mapping from post ID to promo score
     id_to_score = dict(zip(df["id"], df["promo_score"]))
-
-    # Append the promo_score to each reddit post object as the 8th item
     for post in reddit_posts:
-        post_id = post[0]  # post[0] is the id
+        post_id = post[0]
         promo_score = id_to_score.get(post_id, 0)
         post.append(promo_score)
+
+    # Final GC cleanup
+    gc.collect()
 
     return reddit_posts
