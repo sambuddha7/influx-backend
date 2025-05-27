@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import subreddit, reply,post
+from routers import subreddit, reply,post, web_scrape
 import uvicorn
 import gc
 import multiprocessing
@@ -20,6 +20,7 @@ app.add_middleware(
 app.include_router(subreddit.router)
 app.include_router(reply.router)
 app.include_router(post.router)
+app.include_router(web_scrape.router)
 
 @app.get("/")
 async def root():

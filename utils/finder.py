@@ -58,7 +58,34 @@ def get_hot_posts(subreddit_name, limit=5):
     
     return pd.DataFrame(posts)
 
+def get_description(content):
+    system_prompt = "Generate a company description from the given text. "
+    user_prompt = f"""
+    
+    <instructions>
+1. I have given the content of a company's home page and maybe the about page, generate a 50 - 100 word company description
+2. Emphasise on what the company does, what their industry is, maybe some solutions.
+3. THis is what we scraped from their website: {content}
+4. provide just the description, nothing else.
+</instructions>
+    
+    """
+    try:
+        message = client.messages.create(
+            model="claude-3-5-haiku-20241022",
+            system=system_prompt,
+            max_tokens=1000,
+            messages=[
+                {"role": "user", "content": user_prompt}
+            ]
+        )
 
+        string = message.content[0].text
+        cleaned_string = string.strip('"')
+
+        return cleaned_string
+    except Exception as e:
+        return f"Error getting summary: {str(e)}"
 def get_keywords(description):
     system_prompt = "Generate keywords from the given text in a csv format. "
     user_prompt = f"""

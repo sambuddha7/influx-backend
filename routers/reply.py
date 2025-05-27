@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from utils.finder import get_rising_posts, get_hot_posts, get_reply, get_keywords, get_reply_comm, get_reply_feedback
+from utils.finder import get_rising_posts, get_hot_posts, get_reply, get_keywords, get_reply_comm, get_reply_feedback, get_description
 from utils.tracker import MetricsTracker
 from typing import List
 from dotenv import load_dotenv
@@ -89,6 +89,19 @@ async def get_keywords_from_description(description: str):
     try:
         keywords = get_keywords(description)
         return keywords
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+class ContentInput(BaseModel):
+    content: str
+    companyName: str
+@router.post("/company_desc")
+async def get_company_description(input: ContentInput):
+    final_str="company name:" + input.companyName + "\n" +input.content
+    print(final_str)
+    try:
+        desc = get_description(final_str)
+        desc = desc.strip('"')
+        return desc
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
