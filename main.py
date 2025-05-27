@@ -25,12 +25,6 @@ app.include_router(post.router)
 async def root():
     return {"message": "Hello from FastAPI!"}
 
-@app.on_event("shutdown")
-async def cleanup_on_shutdown():
-    print("Cleaning up on shutdown...")
-    gc.collect()  # Forces Python to release unused memory and clear semaphores
-    multiprocessing.active_children()  # Triggers cleanup of child processes
-    print("Cleanup complete.")
 
 # Run the app
 if __name__ == "__main__":

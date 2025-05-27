@@ -68,8 +68,8 @@ async def get_relevant_posts(userid):
             reply_list.append(reddit_object)
             
         company_description = await firestore_service.get_company_description(user_id=userid)
-        reply_list = final_df(reply_list, company_description)
-        print(reply_list)
+        # reply_list = final_df(reply_list, company_description)
+        # print(reply_list)
 
         return reply_list
         #return results
