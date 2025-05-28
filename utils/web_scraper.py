@@ -43,7 +43,7 @@ def identify_page_type(url):
     else:
         return "general"
 def scrape_website(base_url):
-    if not base_url.startswith("http://"):
+    if not base_url.startswith("http://") and not base_url.startswith("https://"):
         base_url = "https://" + base_url
     print(f"Scraping from: {base_url}")
 
