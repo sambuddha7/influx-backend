@@ -5,7 +5,7 @@ import pandas as pd
 from utils.posts import find_relevant_posts, split_csv_string
 from utils.firestore_service import FirestoreService
 from utils.finder import filter_best_subreddits, get_hot_posts, get_rising_posts
-from utils.post_scoring import final_df
+# from utils.post_scoring import final_df
 
 firestore_service = FirestoreService()
 router = APIRouter()
