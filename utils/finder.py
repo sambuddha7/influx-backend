@@ -15,7 +15,7 @@ reddit = praw.Reddit(
 
 
 client = Anthropic(
-    api_key=os.getenv("CLAUDE_API_KEY"),
+    api_key=os.getenv("CLAUDE_API_KEY")
 )
 
 
@@ -215,7 +215,7 @@ def get_reply_feedback(initial, feedback):
     except Exception as e:
         return f"Error getting summary: {str(e)}"
 
-def get_reply(text_to_reply, company_name, company_description, user_role, sample_replies, marketing_objectives):
+def get_reply(text_to_reply, company_name, company_description, user_role, sample_replies, marketing_objectives, company_docs):
     
     marketing_objectives = ""
     system_prompt = f"You are an AI assistant trained to craft personalized Reddit comment replies for {company_name} and finding potential customers."
@@ -231,13 +231,17 @@ Text to reply to:
 
 <company_description>{company_description}</company_description>
 
+<company_docs> 
+{company_docs}
+<company_docs>
+
 <instructions>
 1. Craft a response that is helpful and adds value to the conversation.
 2. Keep the response in one or two lines maximum.
 3. Use markdown formatting for better readability if appropriate.
 4. Provide just the reply, without any additional text or explanations.
 5. Sound genuine and authentic.
-6. Use company description or any knowledge you have of the company for reference when mentioning the company.
+6. Use company description, company docs, or any knowledge you have of the company for reference when mentioning the company.
 7. Keep it brief and to the point.
 8. Don't mention other companies outside of {company_name} if you're mentioning any company or software.
 9. Keep the tone casual, how it is usually on reddit. Don't make it sound formal at all.
@@ -275,7 +279,7 @@ Text to reply to:
                 {"role": "user", "content": user_prompt}
             ]
         )
-
+        print(user_prompt)
         string = message.content[0].text
         cleaned_string = string.strip('"')
 
@@ -331,7 +335,7 @@ def filter_best_subreddits(subreddit_list, company_description, num_subreddits=1
                 {"role": "user", "content": user_prompt}
             ]
         )
-        
+        print(user_prompt)
         response = message.content[0].text.strip()
         return response
             
