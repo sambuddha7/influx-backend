@@ -42,6 +42,43 @@ def identify_page_type(url):
         return "contact"
     else:
         return "general"
+def scrape_home_and_about(base_url):
+    if not base_url.startswith("http://") and not base_url.startswith("https://"):
+        base_url = "https://" + base_url
+    print(f"Scraping home and about from: {base_url}")
+
+    try:
+        html = fetch_html(base_url)
+        internal_links = extract_links(base_url, html)
+    except Exception as e:
+        print(f"[!] Failed to fetch base page: {e}")
+        return []
+
+    # Filter only homepage and about page
+    target_links = [base_url] + [link for link in internal_links if "about" in link.lower()]
+    target_links = list(set(target_links))  # Remove duplicates
+
+    all_data = []
+
+    for link in target_links:
+        try:
+            article_data = extract_article(link)
+            if article_data and len(article_data["content"]) > 200:
+                all_data.append({
+                    "url": link,
+                    "page_type": identify_page_type(link),
+                    "title": article_data["title"],
+                    "content": article_data["content"],
+                    "date_published": article_data["date_published"]
+                })
+        except Exception as e:
+            print(f"[!] Error scraping {link}: {e}")
+            continue
+
+    print("home/about scraping done")
+    return all_data
+
+
 def scrape_website(base_url):
     if not base_url.startswith("http://") and not base_url.startswith("https://"):
         base_url = "https://" + base_url

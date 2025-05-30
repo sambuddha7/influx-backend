@@ -68,6 +68,8 @@ def get_description(content):
 3. THis is what we scraped from their website: {content}
 4. provide just the description, nothing else.
 5. If it is a large fortune 500 company that you already know about don't rely on the scraped pages for information.
+6. Focus on what the company does and the industry rather than work culture etc.
+7. Write your description in a tone that you would put on the company website if you were them
 </instructions>
     
     """
