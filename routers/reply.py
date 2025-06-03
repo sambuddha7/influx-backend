@@ -69,10 +69,28 @@ async def get_reps(post: RedditPost, userid):
     return llm_reply
 
 @router.post("/regenerate-reply")
-async def get_reps_feedback(post: RedditPost, feedback: str):
-    print(feedback)
-    llm_reply = get_reply_feedback( post.suggested_reply, feedback)
-    print(llm_reply)
+async def get_reps_feedback(request: dict):
+    post_data = request.get("post")
+    feedback = request.get("feedback")
+    
+    print(f"Feedback: {feedback}")
+    
+    # Extract post context
+    post_title = post_data.get("title", "")
+    post_content = post_data.get("content", "")
+    subreddit = post_data.get("subreddit", "")
+    current_reply = post_data.get("suggested_reply", "")
+    
+    # Pass all context to the function
+    llm_reply = get_reply_feedback(
+        initial_reply=current_reply,
+        feedback=feedback,
+        post_title=post_title,
+        post_content=post_content,
+        subreddit=subreddit
+    )
+    
+    print(f"Generated reply: {llm_reply}")
     return llm_reply
 
 @router.post("/community_reply")
