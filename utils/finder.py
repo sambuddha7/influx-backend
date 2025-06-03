@@ -65,12 +65,13 @@ def get_description(content):
     <instructions>
 1. I have given the content of a company's home page and maybe the about page, generate a 50 - 100 word company description
 2. Emphasise on what the company does, what their industry is, maybe some solutions.
-3. THis is what we scraped from their website: {content}
+3. This is what we scraped from their website: {content}
 4. provide just the description, nothing else.
 5. If it is a large fortune 500 company that you already know about don't rely on the scraped pages for information.
 6. Focus on what the company does and the industry rather than work culture etc.
 7. Write your description in a tone that you would put on the company website if you were them
-8. If there is no text given just generate a description from your knowledge of the company name and if you don't know anything about the company just return nothing.
+8. If there is no text given just generate a description from your knowledge of the company name
+9. if you don't know anything about the company and the text is blank just return nothing.
 </instructions>
     
     """
