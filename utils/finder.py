@@ -72,6 +72,7 @@ def get_description(content):
 7. Write your description in a tone that you would put on the company website if you were them
 8. If there is no text given just generate a description from your knowledge of the company name
 9. if you don't know anything about the company and the text is blank just return nothing.
+10. Even if you're not confident about the description generate something.
 </instructions>
     
     """
