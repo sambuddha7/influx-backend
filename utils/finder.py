@@ -70,9 +70,11 @@ def get_description(content):
 5. If it is a large fortune 500 company that you already know about don't rely on the scraped pages for information.
 6. Focus on what the company does and the industry rather than work culture etc.
 7. Write your description in a tone that you would put on the company website if you were them
+8. If there is no text given just generate a description from your knowledge of the company name and if you don't know anything about the company just return nothing.
 </instructions>
     
     """
+    print(f"generating user description with the following prompt: {user_prompt}")
     try:
         message = client.messages.create(
             model="claude-3-5-haiku-20241022",
