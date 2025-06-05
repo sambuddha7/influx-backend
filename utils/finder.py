@@ -211,6 +211,7 @@ def get_reply_feedback(initial_reply, feedback, post_title, post_content, subred
     6. Provide just the improved reply, without any additional text or explanations
     7. Don't market anything unless feedback type is soft plug
     8. Rewrite the reply from scratch unless additional comments include minor tweaks to the generated reply.
+    9. Keep the response in one or two line unless mentioned by the user to make it longer.
     </instructions>
     """
     print(user_prompt)
