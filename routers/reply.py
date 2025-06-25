@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from utils.finder import get_rising_posts, get_hot_posts, get_reply, get_keywords, get_reply_comm, get_reply_feedback, get_description
-from utils.tracker import MetricsTracker
 from typing import List
 from dotenv import load_dotenv
 import praw
@@ -26,7 +25,6 @@ reddit = praw.Reddit(
     password=os.getenv("PASSWORD2"),
 )
 
-tracker = MetricsTracker(reddit, firestore_service)
 class ReplyRequest(BaseModel):
     post_id: str = Field(..., min_length=1)
     reply_text: str = Field(..., min_length=1)
@@ -45,7 +43,6 @@ async def reply_to_reddit_post(request: ReplyRequest, userid: str):
         submission = reddit.submission(id=request.post_id)
         # Add a reply to the post
         reply = submission.reply(request.reply_text)
-        await tracker.add_reply(userid, reply.id)
         return {
             "status": "success", 
             "message": "Reply submitted successfully",
@@ -122,9 +119,3 @@ async def get_company_description(input: ContentInput):
         return desc
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/metrics")
-async def get_metrics(userid: str):
-    """Get current metrics for all tracked replies"""
-    metrics = await tracker.get_metrics(userid)
-    return metrics
