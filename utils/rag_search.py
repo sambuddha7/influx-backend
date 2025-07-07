@@ -9,7 +9,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_KEY"))
 
 pc = Pinecone(api_key=os.getenv("PINECONE_KEY"))
 index_host = os.getenv("PINECONE_HOST")
-namespace = "company-docs"
+namespace = "test"
 
 import tiktoken
 
@@ -17,7 +17,7 @@ def count_tokens(text: str, model: str = "text-embedding-3-small") -> int:
     encoding = tiktoken.encoding_for_model(model)
     return len(encoding.encode(text))
 
-def upsert_user_docs(user_id: str, docs: list[dict]):
+def upsert_user_docs(user_id: str, docs: list[dict], source_type: str):
     """
     Args:
       user_id: Unique user identifier
@@ -47,7 +47,7 @@ def upsert_user_docs(user_id: str, docs: list[dict]):
         metadata = {k: (v if v is not None else "") for k, v in doc.items()}
         metadata["user_id"] = user_id
 
-        vector_id = str(user_id) + "_doc" + str(i)
+        vector_id = str(user_id) + "_doc" + str(i) + "_" + source_type
 
         vectors.append({
             "id": vector_id,
@@ -56,7 +56,7 @@ def upsert_user_docs(user_id: str, docs: list[dict]):
         })
 
     index.upsert(
-        namespace=namespace,
+        namespace=user_id,
         vectors=vectors
     )
     
@@ -79,13 +79,10 @@ def query_user_docs(user_id: str, query_text: str, top_k: int = 5):
 
     # Query the index, filtering by user_id in metadata
     query_response = index.query(
-        namespace=namespace,
+        namespace=user_id,
         vector=query_embedding,
         top_k=top_k,
         include_metadata=True,
-        filter={
-            "user_id": {"$eq": user_id}  # filter by user_id
-        }
     )
 
     return query_response
@@ -98,3 +95,53 @@ def format_company_docs(docs):
         if content:
             doc_snippets.append(content.strip())
     return "\n\n".join(doc_snippets)
+
+
+def get_all_user_docs(user_id: str):
+    """
+    Retrieve all documents for a specific user from Pinecone
+    
+    Args:
+        user_id: Unique user identifier
+    
+    Returns:
+        List of documents with metadata
+    """
+    index = pc.Index(host=index_host)
+    
+    
+    dummy_embedding = [0.0] * 1536 
+    
+    try:
+        # Query with a very high top_k to get all docs
+        query_response = index.query(
+            namespace=user_id,
+            vector=dummy_embedding,
+            top_k=10000,  # Adjust based on expected max docs per user
+            include_metadata=True,
+        )
+        
+        # Extract and format the documents
+        documents = []
+        for match in query_response.matches:
+            doc = {
+                "id": match.id,
+                "content": match.metadata.get("content", ""),
+                "title": match.metadata.get("title", ""),
+                "source_type": match.metadata.get("source_type", ""),
+                "file_type": match.metadata.get("file_type", ""),
+                "file_size": match.metadata.get("file_size", 0),
+                "url": match.metadata.get("url", ""),
+                "uploaded_at": match.metadata.get("uploaded_at", ""),
+                "score": match.score
+            }
+            documents.append(doc)
+        
+        # Sort by uploaded_at (most recent first)
+        documents.sort(key=lambda x: x.get("uploaded_at", ""), reverse=True)
+        
+        return documents
+        
+    except Exception as e:
+        print(f"Error retrieving user documents: {e}")
+        return []

@@ -246,6 +246,7 @@ Text to reply to:
 8. Don't mention other companies outside of {company_name} if you're mentioning any company or software.
 9. Keep the tone casual, how it is usually on reddit. Don't make it sound formal at all.
 10. No emojis
+11. Be based heavily on the company docs above. If there's any way to pull a feature, use case, benefit, or insight from them, do it naturally.
 </instructions>
 
 
