@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from utils.finder import get_rising_posts, get_hot_posts, get_reply, get_keywords, get_reply_comm, get_reply_feedback, get_description
+
+from utils.rag_search import query_user_docs, format_company_docs
 from typing import List
 from dotenv import load_dotenv
 import praw
@@ -55,6 +57,8 @@ async def reply_to_reddit_post(request: ReplyRequest, userid: str):
         # Handle any other unexpected errors
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
     
+    
+    
 @router.post("/reply")
 async def get_reps(post: RedditPost, userid):
     company_description = await firestore_service.get_company_description(user_id=userid) #1
@@ -62,8 +66,15 @@ async def get_reps(post: RedditPost, userid):
     user_role = await firestore_service.get_user_role(user_id=userid) #3
     sample_reply =  await firestore_service.get_sample_reply(user_id=userid)#4 
     marketing_goals = await firestore_service.get_marketing_objectives(user_id=userid) #5
-    llm_reply = get_reply(f"title:{post.title} content: {post.content}", company_name, company_description, user_role, sample_reply, marketing_goals) # llm call 
+    stri=query_user_docs(userid, post.content, 3)
+    print(stri)
+    company_docs = format_company_docs(stri)
+    print(company_docs)
+    
+    llm_reply = get_reply(f"title:{post.title} content: {post.content}", company_name, company_description, user_role, sample_reply, marketing_goals, company_docs=company_docs) # llm call 
     return llm_reply
+
+
 
 @router.post("/regenerate-reply")
 async def get_reps_feedback(request: dict):
@@ -90,6 +101,9 @@ async def get_reps_feedback(request: dict):
     print(f"Generated reply: {llm_reply}")
     return llm_reply
 
+
+
+
 @router.post("/community_reply")
 async def get_comm_reps(post: RedditPost, userid):
     company_description = await firestore_service.get_company_description(user_id=userid) #1
@@ -97,8 +111,15 @@ async def get_comm_reps(post: RedditPost, userid):
     user_role = await firestore_service.get_user_role(user_id=userid) #3
     sample_reply =  await firestore_service.get_sample_reply(user_id=userid)#4 
     marketing_goals = await firestore_service.get_marketing_objectives(user_id=userid) #5
+    
+    
     llm_reply = get_reply_comm(f"title:{post.title} content: {post.content}", company_name, company_description, user_role, sample_reply, marketing_goals) # llm call 
     return llm_reply
+
+
+
+
+
 @router.post("/keywords")
 async def get_keywords_from_description(description: str):
     try:
