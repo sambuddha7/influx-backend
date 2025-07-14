@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from utils.finder import get_rising_posts, get_hot_posts, get_reply, get_keywords, get_reply_comm, get_reply_feedback, get_description
-from utils.tracker import MetricsTracker
+
 from utils.rag_search import query_user_docs, format_company_docs
 from typing import List
 from dotenv import load_dotenv
@@ -27,7 +27,6 @@ reddit = praw.Reddit(
     password=os.getenv("PASSWORD2"),
 )
 
-tracker = MetricsTracker(reddit, firestore_service)
 class ReplyRequest(BaseModel):
     post_id: str = Field(..., min_length=1)
     reply_text: str = Field(..., min_length=1)
@@ -46,7 +45,6 @@ async def reply_to_reddit_post(request: ReplyRequest, userid: str):
         submission = reddit.submission(id=request.post_id)
         # Add a reply to the post
         reply = submission.reply(request.reply_text)
-        await tracker.add_reply(userid, reply.id)
         return {
             "status": "success", 
             "message": "Reply submitted successfully",
@@ -79,10 +77,28 @@ async def get_reps(post: RedditPost, userid):
 
 
 @router.post("/regenerate-reply")
-async def get_reps_feedback(post: RedditPost, feedback: str):
-    print(feedback)
-    llm_reply = get_reply_feedback( post.suggested_reply, feedback)
-    print(llm_reply)
+async def get_reps_feedback(request: dict):
+    post_data = request.get("post")
+    feedback = request.get("feedback")
+    
+    print(f"Feedback: {feedback}")
+    
+    # Extract post context
+    post_title = post_data.get("title", "")
+    post_content = post_data.get("content", "")
+    subreddit = post_data.get("subreddit", "")
+    current_reply = post_data.get("suggested_reply", "")
+    
+    # Pass all context to the function
+    llm_reply = get_reply_feedback(
+        initial_reply=current_reply,
+        feedback=feedback,
+        post_title=post_title,
+        post_content=post_content,
+        subreddit=subreddit
+    )
+    
+    print(f"Generated reply: {llm_reply}")
     return llm_reply
 
 
@@ -124,9 +140,3 @@ async def get_company_description(input: ContentInput):
         return desc
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/metrics")
-async def get_metrics(userid: str):
-    """Get current metrics for all tracked replies"""
-    metrics = await tracker.get_metrics(userid)
-    return metrics

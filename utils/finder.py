@@ -65,12 +65,18 @@ def get_description(content):
     <instructions>
 1. I have given the content of a company's home page and maybe the about page, generate a 50 - 100 word company description
 2. Emphasise on what the company does, what their industry is, maybe some solutions.
-3. THis is what we scraped from their website: {content}
+3. This is what we scraped from their website: {content}
 4. provide just the description, nothing else.
 5. If it is a large fortune 500 company that you already know about don't rely on the scraped pages for information.
+6. Focus on what the company does and the industry rather than work culture etc.
+7. Write your description in a tone that you would put on the company website if you were them
+8. If there is no text given just generate a description from your knowledge of the company name
+9. if you don't know anything about the company and the text is blank just return nothing.
+10. Even if you're not confident about the description generate something.
 </instructions>
     
     """
+    print(f"generating user description with the following prompt: {user_prompt}")
     try:
         message = client.messages.create(
             model="claude-3-5-haiku-20241022",
@@ -178,31 +184,42 @@ Text to reply to:
         return cleaned_string
     except Exception as e:
         return f"Error getting summary: {str(e)}"
-def get_reply_feedback(initial, feedback):
-    system_prompt ="you help generate authentic replies"
-    user_prompt = f"""this is the initial reply you generated : {initial}. this is the feedback i want you to use to change: {feedback}
+def get_reply_feedback(initial_reply, feedback, post_title, post_content, subreddit):
+    system_prompt = """You help generate authentic Reddit replies. This prompt you are regenerating a comment, incorporate it naturally while maintaining an authentic, conversational tone that fits the specific subreddit and post context."""
+    
+    user_prompt = f"""ORIGINAL POST CONTEXT:
+    Subreddit: r/{subreddit}
+    Title: {post_title}
+    Content: {post_content}
 
-<instructions>
+    CURRENT REPLY: {initial_reply}
 
-1. Provide just the reply, without any additional text or explanations.
+    REPLY TYPES GUIDE:
+    - "Add Value": Make the reply more helpful, informative, and useful to the original poster
+    - "Ask a Question": Include a thoughtful follow-up question to encourage discussion
+    - "Relatable": Add personal experiences or shared understanding to connect with the poster
+    - "Soft Plug": Subtly and naturally mention relevant products/services without being pushy
 
-</instructions>
+    ADDITIONAL COMMENTS TO INCORPORATE: {feedback}
 
-
-"""
+    <instructions>
+    1. Consider the post's context, tone, and the subreddit culture when modifying the reply
+    2. Incorporate the feedback naturally while ensuring the reply still addresses the original post appropriately
+    3. If feedback includes a type like "Add Value", "Ask a Question", "Relatable", or "Soft Plug", apply that approach while staying relevant to the original post
+    4. Maintain authenticity - the reply should sound natural and genuinely helpful to the original poster
+    5. Keep the tone appropriate for the subreddit (professional for business subs, casual for general discussion, etc.)
+    6. Provide just the improved reply, without any additional text or explanations
+    7. Don't market anything unless feedback type is soft plug
+    8. Rewrite the reply from scratch unless additional comments include minor tweaks to the generated reply.
+    9. Keep the response in one or two line unless mentioned by the user to make it longer.
+    </instructions>
+    """
+    print(user_prompt)
     try:
         message = client.messages.create(
-            # model="claude-3-opus-20240229",
             model="claude-3-5-sonnet-latest",
-            # model="claude-3-haiku-20240307",
             system=system_prompt,
             max_tokens=1000,
-            # messages=[
-            #     {
-            #         "role": "user",
-            #         "content": f"{prompt}\n\nText to reply to:\n{text_to_reply}"
-            #     }
-            # ]
             messages=[
                 {"role": "user", "content": user_prompt}
             ]
@@ -210,7 +227,6 @@ def get_reply_feedback(initial, feedback):
 
         string = message.content[0].text
         cleaned_string = string.strip('"')
-
         return cleaned_string
     except Exception as e:
         return f"Error getting summary: {str(e)}"

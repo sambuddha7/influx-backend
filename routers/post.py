@@ -57,10 +57,10 @@ async def get_relevant_posts(userid):
     #     reply_list = []
         iter = 0
         reply_list = []
-        if len(results) < 10:
+        if len(results) < 20:
             iter = len(results)
         else:
-            iter = 10
+            iter = 20
         for i in range(iter):
             obj = results[i] #victim of the crime
             llm_reply = "Add your reply here"
