@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from utils.finder import get_rising_posts, get_hot_posts, get_reply, get_keywords, get_reply_comm, get_reply_feedback, get_description
+from utils.finder import get_reply, get_keywords, get_reply_comm, get_reply_feedback, get_description, get_subreddits, get_phrases
 from typing import List
 from dotenv import load_dotenv
 import praw
@@ -103,12 +103,35 @@ async def get_comm_reps(post: RedditPost, userid):
 async def get_keywords_from_description(description: str):
     try:
         keywords = get_keywords(description)
+        print(f"generated keywords: {keywords}")
         return keywords
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/paraphrases")
+async def get_paraphrases_from_description(description: str):
+    try:
+        phrases = get_phrases(description)
+        print(f"generated phrases: {phrases}")
+        return phrases
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/generate_subreddits")
+async def get_subreddits_from_description(description: str):
+    try:
+        subreddits = get_subreddits(description)
+        print(f"generated subreddits: {subreddits}")
+        return subreddits
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 class ContentInput(BaseModel):
     content: str
     companyName: str
+
 @router.post("/company_desc")
 async def get_company_description(input: ContentInput):
     final_str="company name:" + input.companyName + "\n" +input.content

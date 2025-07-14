@@ -10,15 +10,42 @@ import re
 from dotenv import load_dotenv
 from itertools import combinations
 from datetime import datetime, timedelta
+import asyncpraw
+
 
 
 load_dotenv()
 
-reddit = praw.Reddit(
+reddit = asyncpraw.Reddit(
     client_id=os.getenv("CLIENT_ID"),
     client_secret=os.getenv("CLIENT_SECRET"),
     user_agent=os.getenv("USER_AGENT"),
 )
+
+
+async def search_reddit_new(reddit, keywords, label, target_subreddits=[]):
+    subreddits = '+'.join(target_subreddits) if target_subreddits else 'all'
+    posts = []
+
+    for kw in keywords:
+        print(f"[{label.upper()}] Searching: {kw}")
+        try:
+            subreddit = await reddit.subreddit(subreddits)
+            async for submission in subreddit.search(query=kw, sort="relevance", time_filter="day", limit=100):
+                posts.append({
+                    "id": submission.id,
+                    "title": submission.title,
+                    "body": submission.selftext,
+                    "url": f"https://reddit.com{submission.permalink}",
+                    "score": submission.score,
+                    "created_utc": datetime.fromtimestamp(submission.created_utc),
+                    "num_comments": submission.num_comments,
+                    "subreddit": submission.subreddit.display_name
+                })
+        except Exception as e:
+            print(f"[ERROR] Failed to search for '{kw}' in '{subreddits}': {str(e)}")
+
+    return pd.DataFrame(posts)
 
 vectorizer = TfidfVectorizer(
     stop_words='english',
@@ -128,7 +155,8 @@ def is_promotional(submission) -> bool:
             if keyword in title_lower or keyword in body_lower
         )
     
-            
+        if contains_url(body_lower):
+            return True 
         if contains_url(body_lower) and (len(body_lower.split()) > 300) and has_bullets and has_multiple_headers and submission.num_comments < 3 :
             return True
                                
@@ -222,7 +250,7 @@ def fetch_reddit_posts(search_query: str, limit: int, duration, seen_posts, excl
     except Exception as e:
         print(f"Error fetching Reddit posts: {e}")
 
-    return posts
+    return pd.DataFrame(posts)
 
 def calculate_keyword_scores(text: str, 
                            primary_keywords: List[str], 

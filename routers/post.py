@@ -2,77 +2,74 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from typing import List, Optional
 import pandas as pd
-from utils.posts import find_relevant_posts, split_csv_string
+from utils.posts import find_relevant_posts, split_csv_string, search_reddit_new
+from utils.search_posts import search_reddit_stream
 from utils.firestore_service import FirestoreService
 from utils.finder import filter_best_subreddits, get_hot_posts, get_rising_posts
+from utils.web_search import prepare_vector, batch_upsert
+from utils.pinecone_client import index
+import asyncpraw
+import os 
+
 # from utils.post_scoring import final_df
 
 firestore_service = FirestoreService()
 router = APIRouter()
 
-class KeywordsInput(BaseModel):
-    primary_keywords: List[str]
-    secondary_keywords: List[str]
-    limit: Optional[int] = 10000
-    min_similarity: Optional[float] = 0.1
-
 @router.get("/relevant_posts")
 async def get_relevant_posts(userid):
-    # Get keywords from Firestore
-    # keywords = await firestore_service.get_keywords(user_id=userid)
-    # keywords = split_csv_string(keywords)
-    primary = await firestore_service.get_primary_keywords(user_id=userid)
-    secondary = await firestore_service.get_secondary_keywords(user_id=userid)
-    excluded_subs = await firestore_service.get_excluded_reddits(user_id=userid)
-    reddit_posts = await firestore_service.get_user_posts(user_id=userid)
-    primary = primary.split(',')
-    secondary = secondary.split(',')
-    keywords = KeywordsInput(
-        primary_keywords=primary,
-        secondary_keywords=secondary,
+    reddit = asyncpraw.Reddit(
+        client_id=os.getenv("CLIENT_ID"),
+        client_secret=os.getenv("CLIENT_SECRET"),
+        user_agent=os.getenv("USER_AGENT"),
     )
-    #reply_list = []
+    # Get keywords from Firestore
+    keywords = await firestore_service.get_keywords(user_id=userid)
+    keywords = keywords.split(',')
+    subreddits = await firestore_service.get_subreddits(user_id=userid)
+    subreddits = subreddits.split(',')
+
     try:
-        # Find relevant posts
-        results_df = find_relevant_posts(
-            primary_keywords=keywords.primary_keywords,
-            secondary_keywords=keywords.secondary_keywords,
-            limit=keywords.limit,
-            min_similarity=keywords.min_similarity,
-            excluded_subs=excluded_subs, 
-            reddit_posts=reddit_posts,
-            duration="month"
+        # Use the new search_reddit_stream function
+        results = await search_reddit_stream(
+            reddit=reddit,
+            keywords=keywords,
+            target_subreddits=subreddits,
+            max_posts=1000
         )
-        
-        if results_df.empty:
-            return []
-
-        # Convert DataFrame to list of dictionaries for response
-        results = results_df.astype(object).to_dict(orient="records")
-
-        # id
-        # subreddit
-        # title
-        # body
-    #     reply_list = []
+        # ...existing logic for processing posts...
         iter = 0
         reply_list = []
         if len(results) < 20:
             iter = len(results)
         else:
-            iter = 20
+            iter = len(results)
         for i in range(iter):
-            obj = results[i] #victim of the crime
+            obj = results[i]
             llm_reply = "Add your reply here"
             reddit_object = [obj["id"], obj["subreddit"], obj["title"], obj["body"], llm_reply, obj["url"], obj["created_utc"]]
             reply_list.append(reddit_object)
-            
-        company_description = await firestore_service.get_company_description(user_id=userid)
-        # reply_list = final_df(reply_list, company_description)
-        # print(reply_list)
+        print("reached")
+        print(len(reply_list), "reply list length")
 
-        return reply_list
-        #return results
+        # Add posts to Pinecone with user namespace
+        vectors_to_upsert = []
+
+        for post in reply_list:
+            try:
+                vector = prepare_vector(post)
+                vectors_to_upsert.append(vector)
+            except Exception as e:
+                print(f"Failed to process post ID {post[0]}: {e}")
+        
+        print("reached")
+
+        if vectors_to_upsert:
+            batch_upsert(index, vectors_to_upsert, namespace=userid)
+        else:
+            print("❌ No vectors were uploaded due to earlier errors.")
+        # return reply_list
+        return []
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error occurred: {str(e)}")

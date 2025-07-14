@@ -93,12 +93,90 @@ def get_description(content):
         return cleaned_string
     except Exception as e:
         return f"Error getting summary: {str(e)}"
+def get_subreddits(description):
+    system_prompt = "Give subreddits from the given text in a csv format. "
+    user_prompt = f"""
+    
+    <instructions>
+Here is the company description:
+
+<company_description>
+{description}
+</company_description>
+
+You are a marketing specialist tasked with generating subreddit recommendations for this company. Your goal is to identify 20 different subreddits that are relevant to the company, its products, services, target audience, or industry.
+
+Instructions:
+1. Read and analyze the company description carefully.
+2. Based on the company's key aspects (products, services, target audience, industry, verticals, competitors etc.), identify 20 relevant subreddits.
+3. Ensure the subreddits cover a diverse range to maximize reach and engagement potential.
+4. Focus on subreddits likely to contain discussions related to the company's products, services, or industry.
+5. Avoid suggesting subreddits that are too broad or only tangentially related to the company's focus.
+
+
+Output Requirements:
+- After your analysis, provide ONLY a single line of 20 comma-separated subreddit names.
+- Do NOT include the "r/" prefix in the subreddit names.
+- Do NOT include any additional text, explanations, or analysis in the final output.
+
+Example output format:
+marketing,smallbusiness,entrepreneur,techstartups,b2bsales,saas,productivity,remotework,businessstrategy,startup,technology,artificialintelligence,machinelearning,datascience,businessintelligence
+
+Your task is to generate a similar list based on the provided company description. Remember, your final output should be ONLY the CSV list of subreddit names, nothing else.
+</instructions>
+    
+    """
+    try:
+        message = client.messages.create(
+            model="claude-3-5-haiku-latest",
+            system=system_prompt,
+            max_tokens=1000,
+            messages=[
+                {"role": "user", "content": user_prompt}
+            ]
+        )
+
+        string = message.content[0].text
+        cleaned_string = string.strip('"')
+
+        return cleaned_string
+    except Exception as e:
+        return f"Error getting subreddits: {str(e)}"
+def get_phrases(description):
+    system_prompt = "Generate phrases from the given text in a csv format. Your task is to generate paraphrased pain point phrases that real potential customers might express online (e.g., Reddit, forums, Slack, or surveys)."
+    user_prompt = f"""
+    
+    <instructions>
+1. Please generate at least 10 paraphrased pain point statements from the following company description:\n\n{description}
+2. Provide just the csv, without any additional text or explanations.
+3. Vary the tone, structure, and style — include casual questions, frustrations, short complaints, or requests for help. Mimic how real users talk online
+4. Here's a sample of a reply : "example reply 1, example reply 2, example reply 3"
+
+</instructions>
+    
+    """
+    try:
+        message = client.messages.create(
+            model="claude-3-5-haiku-20241022",
+            system=system_prompt,
+            max_tokens=1000,
+            messages=[
+                {"role": "user", "content": user_prompt}
+            ]
+        )
+
+        string = message.content[0].text
+        cleaned_string = string.strip('"')
+
+        return cleaned_string
+    except Exception as e:
+        return f"Error getting keywords: {str(e)}"
 def get_keywords(description):
     system_prompt = "Generate keywords from the given text in a csv format. "
     user_prompt = f"""
     
     <instructions>
-1. Please generate 10 keywords from the following company description:\n\n{description}
+1. Please generate 20 keywords from the following company description:\n\n{description}
 2. Provide just the csv, without any additional text or explanations.
 3. Don't give too industry specific keywords but have a good mix of common words as well.
 4. Give either one or two keywords max.
@@ -121,7 +199,7 @@ def get_keywords(description):
 
         return cleaned_string
     except Exception as e:
-        return f"Error getting summary: {str(e)}"
+        return f"Error getting keywords: {str(e)}"
 def get_reply_comm(text_to_reply, company_name, company_description, user_role, sample_replies, marketing_objectives):
     
     marketing_objectives = ""
